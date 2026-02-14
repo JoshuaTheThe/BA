@@ -352,8 +352,7 @@ assignment_typeB(struct _GLOBAL_ *GLOBAL, int tk, char *buf)
                 _print_number(GLOBAL->ebpoff[i]);
                 _print("(%ebp), %ebx\n");
         }
-        _print("\tpopl (%ebx)\n");
-        _print("\tpushl (%ebx)\n");
+        _print("\tpopl (%ebx)\n\tpushl (%ebx)\n");
         return tk;
 }
 
@@ -373,8 +372,7 @@ primary(struct _GLOBAL_ *GLOBAL, int tk)
         {
                 _print("\tlea (string");
                 _print_number(GLOBAL->string_count);
-                _print("), %ebx\n");
-                _print("\tpushl %ebx\n");
+                _print("), %ebx\n\tpushl %ebx\n");
                 createstr(GLOBAL);
                 return tok(GLOBAL);
         }
@@ -392,14 +390,11 @@ primary(struct _GLOBAL_ *GLOBAL, int tk)
                         return assignment_typeB(GLOBAL, tok(GLOBAL), buf);
                 else if (tk == 5)
                 {
-                        _print("\tpushl %esi\n");
-                        _print("\tmovl %esp,%esi\n");
+                        _print("\tpushl %esi\n\tmovl %esp,%esi\n");
                         tk = expr(GLOBAL,tok(GLOBAL));
                         _print("\tcall ");
                         _print(buf);
-                        _print("\n\tmovl %esi,%esp\n");
-                        _print("\tpopl %esi\n");
-                        _print("\tpush %eax\n");
+                        _print("\n\tmovl %esi,%esp\n\tpopl %esi\n\tpush %eax\n");
                         if (tk != 6)
                                 _perror("syntax error\n", 14), _exit(1);
                         tk = tok(GLOBAL);
@@ -434,20 +429,16 @@ multiplicative(struct _GLOBAL_ *GLOBAL, int tk)
         {
                 int _ = tk;
                 tk = primary(GLOBAL, tok(GLOBAL));
-                _print("\tpopl %ebx\n");
-                _print("\tpopl %eax\n");
+                _print("\tpopl %ebx\n\tpopl %eax\n");
                 if (_ == 3)
                         _print("\timul %ebx\n");
                 else if (_ == 4)
                 {
-                        _print("\tcdq\n");
-                        _print("\tidiv %ebx\n");
+                        _print("\tcdq\n\tidiv %ebx\n");
                 }
                 else if (_ == 15)
                 {
-                        _print("\tcdq\n");
-                        _print("\tidiv %ebx\n");
-                        _print("\tmovl %edx, %eax\n");
+                        _print("\tcdq\n\tidiv %ebx\n\tmovl %edx, %eax\n");
                 }
                 _print("\tpushl %eax\n");
         }
@@ -461,8 +452,7 @@ additive(struct _GLOBAL_ *GLOBAL, int tk)
         {
                 int _ = tk;
                 tk = multiplicative(GLOBAL, tok(GLOBAL));
-                _print("\tpopl %ebx\n");
-                _print("\tpopl %eax\n");
+                _print("\tpopl %ebx\n\tpopl %eax\n");
                 if (_ == 1)
                         _print("\taddl %ebx, %eax\n");
                 else
@@ -479,15 +469,12 @@ relational(struct _GLOBAL_ *GLOBAL, int tk)
         {
                 int _ = tk;
                 tk = additive(GLOBAL, tok(GLOBAL));
-                _print("\tpopl %ebx\n");
-                _print("\tpopl %eax\n");
-                _print("\tcmpl %ebx, %eax\n");
+                _print("\tpopl %ebx\n\tpopl %eax\n\tcmpl %ebx, %eax\n");
                 if (_ == 21) /* < */
                         _print("\tsetl %al\n");
                 else
                         _print("\tsetg %al\n");
-                _print("\tmovzx %al, %eax\n");
-                _print("\tpushl %eax\n");
+                _print("\tmovzx %al, %eax\n\tpushl %eax\n");
         }
         return tk;
 }
@@ -498,9 +485,7 @@ assignment_typeA(struct _GLOBAL_ *GLOBAL, int tk)
         while (tk == 18)
         {
                 tk = relational(GLOBAL, tok(GLOBAL));
-                _print("\tpopl %ebx\n");
-                _print("\tpopl %eax\n");
-                _print("\tmovl %ebx, (%eax)\n");
+                _print("\tpopl %ebx\n\tpopl %eax\n\tmovl %ebx, (%eax)\n");
         }
         return tk;
 }
@@ -612,9 +597,7 @@ statement(struct _GLOBAL_ *GLOBAL, int tk)
                 int _else = GLOBAL->label_count++;
                 int _end = GLOBAL->label_count++;
                 tk = expr(GLOBAL,tok(GLOBAL));
-                _print("\tpopl %eax\n");
-                _print("\ttestl %eax,%eax\n");
-                _print("\tje m");
+                _print("\tpopl %eax\n\ttestl %eax,%eax\n\tje m");
                 _print_number(_else);
                 _print("\nm");
                 _print_number(_then);
@@ -639,9 +622,7 @@ statement(struct _GLOBAL_ *GLOBAL, int tk)
                 _print_number(_cond);
                 _print(":\n");
                 tk = expr(GLOBAL,tok(GLOBAL));
-                _print("\tpopl %eax\n");
-                _print("\ttestl %eax,%eax\n");
-                _print("\tje m");
+                _print("\tpopl %eax\n\ttestl %eax,%eax\n\tje m");
                 _print_number(_end);
                 _print("\n");
                 tk = statement(GLOBAL, tk);
@@ -671,8 +652,7 @@ statement(struct _GLOBAL_ *GLOBAL, int tk)
                                 _perror("Expected ; after return expression", 35);
                                 _exit(1);
                         }
-                        _print("\tpopl %eax\n");
-                        _print("\tjmp ");
+                        _print("\tpopl %eax\n\tjmp ");
                         _print(GLOBAL->function);
                         _print(".ext\n");
                         return tok(GLOBAL);
@@ -703,17 +683,12 @@ statement(struct _GLOBAL_ *GLOBAL, int tk)
                 _print(GLOBAL->ID);
                 _print(".aft\n");
                 _print(GLOBAL->ID);
-                _print(":\n");
-                _print("\tpushl %ebp\n");
-                _print("\tmovl %esp, %ebp\n");
+                _print(":\n\tpushl %ebp\n\tmovl %esp, %ebp\n");
                 tk = args(GLOBAL, tok(GLOBAL));
                 GLOBAL->EBPOFF = -4;
                 tk = statement(GLOBAL, tk);
                 _print(buf);
-                _print(".ext:\n");
-                _print("\tmovl %ebp, %esp\n");
-                _print("\tpopl %ebp\n");
-                _print("\tret\n");
+                _print(".ext:\n\tmovl %ebp, %esp\n\tpopl %ebp\n\tret\n");
                 _print(buf);
                 _print(".aft:\n");
         }
@@ -784,34 +759,20 @@ main(c, v) char **v;
         init(&GLOBAL);
         char tk, i;
         tk = tok(&GLOBAL);
-        _print("\t.global main\n");
-        _print("\t.section .text\n");
-        _print("main:");
-        _print("\tpushl %ebp\n");
-        _print("\tmovl %esp, %ebp\n");
-
+        _print("\t.global main\n\t.section .text\nmain:\tpushl %ebp\n\tmovl %esp, %ebp\n");
         for (i = 0; i < 6; ++i)
                 GLOBAL.ID[i] = "arg_v"[i];
         createglobal(&GLOBAL);
         for (i = 0; i < 6; ++i)
                 GLOBAL.ID[i] = "arg_c"[i];
         createglobal(&GLOBAL);
-        _print("\tmovl 8(%ebp), %eax\n");
-        _print("\tmovl %eax, (arg_c)\n");
-        _print("\tmovl 12(%ebp), %eax\n");
-        _print("\tmovl %eax, (arg_v)\n");
+        _print("\tmovl 8(%ebp), %eax\n\tmovl %eax, (arg_c)\n\tmovl 12(%ebp), %eax\n\tmovl %eax, (arg_v)\n");
         while (tk)
                 tk = statement(&GLOBAL, tk);
         if (c == 2 && !cmp(v[1], "/Main"))
                 _print("\tcall Main\n");
         _print(".ext:\n");
-        _print("\tmovl %ebp, %esp\n");
-        _print("\tpopl %ebp\n");
-        _print("\tpushl %eax\n");
-        _print("\tmovl $0x01, %eax\n");
-        _print("\tpopl %ebx\n");
-        _print("\tint $0x80\n");
-        _print("\t.section .data\n");
+        _print("\tmovl %ebp, %esp\n\tpopl %ebp\n\tpushl %eax\n\tmovl $0x01, %eax\n\tpopl %ebx\n\tint $0x80\n\t.section .data\n");
         for (i = 0; i < GLOBAL.global_count; ++i)
         {
                 _print(GLOBAL.variables[i]);
