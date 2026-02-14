@@ -771,8 +771,7 @@ main(c, v) char **v;
                 tk = statement(&GLOBAL, tk);
         if (c == 2 && !cmp(v[1], "/Main"))
                 _print("\tcall Main\n");
-        _print(".ext:\n");
-        _print("\tmovl %ebp, %esp\n\tpopl %ebp\n\tpushl %eax\n\tmovl $0x01, %eax\n\tpopl %ebx\n\tint $0x80\n\t.section .data\n");
+        _print(".ext:\n\tmovl %ebp, %esp\n\tpopl %ebp\n\tpushl %eax\n\tmovl $0x01, %eax\n\tpopl %ebx\n\tint $0x80\n\t.section .data\n");
         for (i = 0; i < GLOBAL.global_count; ++i)
         {
                 _print(GLOBAL.variables[i]);
