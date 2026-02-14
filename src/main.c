@@ -705,10 +705,10 @@ main(c, v) char **v;
         printf("\tpushl %%ebp\n");
         printf("\tmovl %%esp, %%ebp\n");
 
-        for (i = 0; i < 31; ++i)
+        for (i = 0; i < 6; ++i)
                 ID[i] = "arg_v"[i];
         createglobal();
-        for (i = 0; i < 31; ++i)
+        for (i = 0; i < 6; ++i)
                 ID[i] = "arg_c"[i];
         createglobal();
         printf("\tmovl 8(%%ebp), %%eax\n");

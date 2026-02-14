@@ -3,7 +3,7 @@ override OUTPUT := ba
 override CC := cc
 override AS := cc
 override LD := cc
-override CC_FLAGS := -std=c89 -Werror -c -g
+override CC_FLAGS := -std=c89 -Werror -c -g -Os
 override AS_FLAGS := -c
 
 override C_SRC := $(shell cd src && find -L * -type f -name '*.c' | LC_ALL=c sort)
