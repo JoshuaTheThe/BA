@@ -36,16 +36,16 @@ createglobal()
         char i;
         for (i = 0; i < 31; ++i)
                 variables[variable_count + global_count][i] = ID[i];
-        variable_count++, global_count++;
+        global_count++;
 }
 
 getvar(buf) char *buf;
 {
-        char i;
+        int i;
         for (i = 0; i < 255; ++i)
                 if (!cmp(buf, variables[i]))
                         return i;
-        return 0;
+        return -1;
 }
 
 init()
@@ -310,6 +310,8 @@ assignment_typeB(tk, buf) char *buf;
         char i;
         tk = expr(tk);
         i = getvar(buf);
+        if (i == -1)
+                perror("not found\n"), exit(1);
         if (i < global_count)
         {
                 printf("\tlea %s, %%ebx\n", buf);
@@ -368,6 +370,8 @@ primary(tk)
                 else
                 {
                         i = getvar(buf);
+                        if (i == -1)
+                                perror("not found\n"), exit(1);
                         if (i < global_count)
                                 printf("\tpushl (%s)\n", buf);
                         else
@@ -423,12 +427,32 @@ additive(tk)
         return tk;
 }
 
-assignment_typeA(tk)
+relational(tk)
 {
         tk = additive(tk);
+        while (tk == 21 || tk == 22)
+        {
+                int _ = tk;
+                tk = additive(tok());
+                printf("\tpopl %%ebx\n");
+                printf("\tpopl %%eax\n");
+                printf("\tcmpl %%ebx, %%eax\n");
+                if (_ == 21) /* < */
+                        printf("\tsetl %%al\n");
+                else
+                        printf("\tsetg %%al\n");
+                printf("\tmovzx %%al, %%eax\n");
+                printf("\tpushl %%eax\n");
+        }
+        return tk;
+}
+
+assignment_typeA(tk)
+{
+        tk = relational(tk);
         while (tk == 18)
         {
-                tk = additive(tok());
+                tk = relational(tok());
                 printf("\tpopl %%ebx\n");
                 printf("\tpopl %%eax\n");
                 printf("\tmovl %%ebx, (%%eax)\n");
@@ -611,8 +635,8 @@ statement(tk)
                 printf("\tret\n");
                 printf("%s.aft:\n", buf);
         }
-        else if (tk == 37)
-        { /* static */
+        else if (tk == 37) /* static */
+        {
                 do
                 {
                         tk = tok();
@@ -624,11 +648,6 @@ statement(tk)
                         if (tk == 18)
                         {
                                 tk = assignment_typeB(tok(), buf);
-                        }
-
-                        if (tk == 23)
-                        {
-                                continue;
                         }
                 } while (tk == 23);
 
@@ -647,16 +666,10 @@ statement(tk)
                         for (i = 0; i < 31; ++i)
                                 buf[i] = ID[i];
                         createvar();
-
                         tk = tok();
                         if (tk == 18)
                         {
                                 tk = assignment_typeB(tok(), buf);
-                        }
-
-                        if (tk == 23)
-                        {
-                                continue;
                         }
                 } while (tk == 23);
 
