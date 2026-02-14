@@ -20,7 +20,13 @@ override STRIP := strip --strip-all \
                   --remove-section=.note* \
                   --remove-section=.comment \
                   --remove-section=.eh_frame \
-                  --remove-section=.eh_frame_hdr
+                  --remove-section=.eh_frame_hdr \
+                  --remove-section=.jcr \
+                  --remove-section=.got \
+                  --remove-section=.got.plt \
+                  --remove-section=.plt \
+                  --remove-section=.data \
+                  --remove-section=.rodata
 
 override C_SRC := src/ba.c
 override AS_SRC := src/crt.S
