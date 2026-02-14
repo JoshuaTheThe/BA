@@ -384,7 +384,7 @@ multiplicative(tk)
                 tk = primary(tok());
                 printf("\tpopl %%ebx\n");
                 printf("\tpopl %%eax\n");
-                if (_ == 3) 
+                if (_ == 3)
                         printf("\timul %%ebx\n");
                 else if (_ == 4)
                 {
@@ -529,7 +529,7 @@ statement(tk)
                 printf("\tjmp m%d\n", _end);
                 printf("m%d:\n", _else);
                 if (tk == 35)
-                        tk=statement(tok());
+                        tk = statement(tok());
                 printf("m%d:\n", _end);
         }
         else if (tk == 36)
@@ -550,7 +550,7 @@ statement(tk)
                 tk = tok();
 
                 if (tk == 19)
-                { 
+                {
                         printf("\tjmp .ext\n");
                         return tok();
                 }
@@ -648,7 +648,7 @@ statement(tk)
                         }
                 } while (tk == 23);
 
-                printf("\tsub $%d, %%esp\n", cnt*4);
+                printf("\tsub $%d, %%esp\n", cnt * 4);
 
                 if (tk != 19)
                 {
