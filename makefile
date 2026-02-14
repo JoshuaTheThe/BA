@@ -3,7 +3,7 @@ override OUTPUT := ba
 override CC := cc
 override AS := cc
 override LD := cc
-override CC_FLAGS := -std=c89 -Werror -c
+override CC_FLAGS := -std=c89 -Werror -c -fno-stack-protector
 override AS_FLAGS := -c
 override STRIP := strip --strip-all --remove-section=.note* --remove-section=.comment
 
