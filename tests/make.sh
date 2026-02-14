@@ -1,2 +1,4 @@
-../bin/ba < 0.ba > test.s
-cc test.s -o test -m32
+../bin/ba < $1.ba > $1.s
+cc $1.s -o $1 -m32
+./$1
+echo $?

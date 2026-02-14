@@ -445,7 +445,8 @@ expr(tk)
 
 args(tk)
 {
-        EBPOFF = 4;
+        int i, temp;
+        EBPOFF = 8;
         if (tk == 5)
         {
                 tk = tok();
@@ -458,9 +459,19 @@ args(tk)
                         tk = tok();
                         EBPOFF += 4;
                 }
-
                 tk = tok();
         }
+
+        int param_start = global_count;
+        int param_end = variable_count - 1;
+
+        for (i = 0; i < (param_end - param_start + 1) / 2; i++)
+        {
+                temp = ebpoff[param_start + i];
+                ebpoff[param_start + i] = ebpoff[param_end - i];
+                ebpoff[param_end - i] = temp;
+        }
+
         return tk;
 }
 
