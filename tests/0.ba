@@ -1,0 +1,7 @@
+extern printf;
+static k = 10;
+while k
+{
+        printf("Hello, World!\n");
+        k=k-1;
+}
