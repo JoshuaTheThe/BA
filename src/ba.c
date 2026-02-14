@@ -1,16 +1,38 @@
 
-extern int printf(const char *, ...);
-extern int perror(const char *, ...);
-extern void exit(int);
-extern int read(int, char *, int);
-
-static STDIN, STDOUT, NUMBER, PUSHBACK, EBPOFF;
-static char ID[32];
-static char variables[255][32], variable_count, global_count;
-static char strings[8192][32], function[32];
-static int ebpoff[255], string_count, label_count;
-
+extern int _print(const char *);
+extern int _perror(const char *, int);
+extern void _exit(int);
+extern int _read(int, char *, int);
 extern expr(int);
+
+int STDIN, STDOUT, NUMBER, PUSHBACK, EBPOFF;
+char ID[32];
+char variables[256][32];
+char strings[256][32], function[32];
+int ebpoff[256], string_count, label_count, variable_count, global_count;
+
+_print_number(n)
+{
+        char buf[12];
+        int i;
+
+        i = 11;
+        buf[11] = 0;
+
+        if (n < 0)
+        {
+                _print("-");
+                n = -n;
+        }
+
+        do
+        {
+                buf[--i] = '0' + (n % 10);
+                n /= 10;
+        } while (n > 0);
+
+        _print(buf + i);
+}
 
 createstr()
 {
@@ -66,7 +88,7 @@ getc()
                 PUSHBACK = -1;
                 return chr;
         }
-        read(STDIN, &chr, 1);
+        _read(STDIN, &chr, 1);
         return chr;
 }
 
@@ -248,8 +270,8 @@ tok()
                                 break;
                         if (chr == -1)
                         {
-                                perror("Unterminated string");
-                                exit(1);
+                                _perror("Unterminated string", 20);
+                                _exit(1);
                         }
                         if (i < 31)
                         {
@@ -310,17 +332,21 @@ assignment_typeB(tk, buf) char *buf;
         tk = expr(tk);
         i = getvar(buf);
         if (i == -1)
-                perror("not found\n"), exit(1);
+                _perror("not found\n", 11), _exit(1);
         if (i < global_count)
         {
-                printf("\tlea %s, %%ebx\n", buf);
+                _print("\tlea ");
+                _print(buf);
+                _print(", %ebx\n");
         }
         else
         {
-                printf("\tlea %d(%%ebp), %%ebx\n", ebpoff[i]);
+                _print("\tlea ");
+                _print_number(ebpoff[i]);
+                _print("(%ebp), %ebx\n");
         }
-        printf("\tpopl (%%ebx)\n");
-        printf("\tpushl (%%ebx)\n");
+        _print("\tpopl (%ebx)\n");
+        _print("\tpushl (%ebx)\n");
         return tk;
 }
 
@@ -333,19 +359,23 @@ primary(tk)
         {
                 tk = expr(tok());
                 if (tk != 6)
-                        perror("syntax error\n"), exit(1);
+                        _perror("syntax error\n", 14), _exit(1);
                 return tok();
         }
         if (tk == 25)
         {
-                printf("\tlea (string%d), %%ebx\n", string_count);
-                printf("\tpushl %%ebx\n");
+                _print("\tlea (string");
+                _print_number(string_count);
+                _print("), %ebx\n");
+                _print("\tpushl %ebx\n");
                 createstr();
                 return tok();
         }
         if (tk == 33)
         {
-                printf("\tpushl $0x%x\n", NUMBER);
+                _print("\tpushl $");
+                _print(ID);
+                _print("\n");
                 return tok();
         }
         if (tk == 32)
@@ -355,26 +385,35 @@ primary(tk)
                         return assignment_typeB(tok(), buf);
                 else if (tk == 5)
                 {
-                        printf("\tpushl %%esi\n");
-                        printf("\tmovl %%esp,%%esi\n");
+                        _print("\tpushl %esi\n");
+                        _print("\tmovl %esp,%esi\n");
                         tk = expr(tok());
-                        printf("\tcall %s\n", buf);
-                        printf("\tmovl %%esi,%%esp\n");
-                        printf("\tpopl %%esi\n");
-                        printf("\tpush %%eax\n");
+                        _print("\tcall ");
+                        _print(buf);
+                        _print("\n\tmovl %esi,%esp\n");
+                        _print("\tpopl %esi\n");
+                        _print("\tpush %eax\n");
                         if (tk != 6)
-                                perror("syntax error\n"), exit(1);
+                                _perror("syntax error\n", 14), _exit(1);
                         tk = tok();
                 }
                 else
                 {
                         i = getvar(buf);
                         if (i == -1)
-                                perror("not found\n"), exit(1);
+                                _perror("not found\n", 11), _exit(1);
                         if (i < global_count)
-                                printf("\tpushl (%s)\n", buf);
+                        {
+                                _print("\tpushl (");
+                                _print(buf);
+                                _print(")\n");
+                        }
                         else
-                                printf("\tpushl %d(%%ebp)\n", ebpoff[i]);
+                        {
+                                _print("\tpushl ");
+                                _print_number(ebpoff[i]);
+                                _print("(%ebp)\n");
+                        }
                 }
                 return tk;
         }
@@ -388,22 +427,22 @@ multiplicative(tk)
         {
                 int _ = tk;
                 tk = primary(tok());
-                printf("\tpopl %%ebx\n");
-                printf("\tpopl %%eax\n");
+                _print("\tpopl %ebx\n");
+                _print("\tpopl %eax\n");
                 if (_ == 3)
-                        printf("\timul %%ebx\n");
+                        _print("\timul %ebx\n");
                 else if (_ == 4)
                 {
-                        printf("\tcdq\n");
-                        printf("\tidiv %%ebx\n");
+                        _print("\tcdq\n");
+                        _print("\tidiv %ebx\n");
                 }
                 else if (_ == 15)
                 {
-                        printf("\tcdq\n");
-                        printf("\tidiv %%ebx\n");
-                        printf("\tmovl %%edx, %%eax\n");
+                        _print("\tcdq\n");
+                        _print("\tidiv %ebx\n");
+                        _print("\tmovl %edx, %eax\n");
                 }
-                printf("\tpushl %%eax\n");
+                _print("\tpushl %eax\n");
         }
         return tk;
 }
@@ -415,13 +454,13 @@ additive(tk)
         {
                 int _ = tk;
                 tk = multiplicative(tok());
-                printf("\tpopl %%ebx\n");
-                printf("\tpopl %%eax\n");
+                _print("\tpopl %ebx\n");
+                _print("\tpopl %eax\n");
                 if (_ == 1)
-                        printf("\taddl %%ebx, %%eax\n");
+                        _print("\taddl %ebx, %eax\n");
                 else
-                        printf("\tsubl %%ebx, %%eax\n");
-                printf("\tpushl %%eax\n");
+                        _print("\tsubl %ebx, %eax\n");
+                _print("\tpushl %eax\n");
         }
         return tk;
 }
@@ -433,15 +472,15 @@ relational(tk)
         {
                 int _ = tk;
                 tk = additive(tok());
-                printf("\tpopl %%ebx\n");
-                printf("\tpopl %%eax\n");
-                printf("\tcmpl %%ebx, %%eax\n");
+                _print("\tpopl %ebx\n");
+                _print("\tpopl %eax\n");
+                _print("\tcmpl %ebx, %eax\n");
                 if (_ == 21) /* < */
-                        printf("\tsetl %%al\n");
+                        _print("\tsetl %al\n");
                 else
-                        printf("\tsetg %%al\n");
-                printf("\tmovzx %%al, %%eax\n");
-                printf("\tpushl %%eax\n");
+                        _print("\tsetg %al\n");
+                _print("\tmovzx %al, %eax\n");
+                _print("\tpushl %eax\n");
         }
         return tk;
 }
@@ -452,9 +491,9 @@ assignment_typeA(tk)
         while (tk == 18)
         {
                 tk = relational(tok());
-                printf("\tpopl %%ebx\n");
-                printf("\tpopl %%eax\n");
-                printf("\tmovl %%ebx, (%%eax)\n");
+                _print("\tpopl %ebx\n");
+                _print("\tpopl %eax\n");
+                _print("\tmovl %ebx, (%eax)\n");
         }
         return tk;
 }
@@ -520,35 +559,43 @@ statement(tk)
                         tk = tok();
                         if (tk == 32)
                         {
-                                printf("\t.extern %s\n", ID);
+                                _print("\t.extern ");
+                                _print(ID);
+                                _print("\n");
                         }
                         else
                         {
-                                perror("syntax error\n");
-                                exit(1);
+                                _perror("syntax error\n", 14);
+                                _exit(1);
                         }
                         tk = tok();
                 } while (tk == 23);
                 if (tk != 19)
                 {
-                        perror("syntax error\n");
-                        exit(1);
+                        _perror("syntax error\n", 14);
+                        _exit(1);
                 }
                 return tok();
         }
         else if (tk == 64)
         { /* Label */
-                printf("\t%s:\n", ID);
+                _print("\t");
+                _print(ID);
+                _print(":\n");
                 return tok();
         }
         else if (tk == 42)
         { /* asm */
                 tk = tok();
                 if (tk == 25)
-                        printf("\t%s\n", ID);
+                {
+                        _print("\t");
+                        _print(ID);
+                        _print("\n");
+                }
                 else
                 {
-                        perror("syntax error\n"), exit(1);
+                        _perror("syntax error\n", 14), _exit(1);
                 }
                 return tok();
         }
@@ -558,29 +605,45 @@ statement(tk)
                 int _else = label_count++;
                 int _end = label_count++;
                 tk = expr(tok());
-                printf("\tpopl %%eax\n");
-                printf("\ttestl %%eax,%%eax\n");
-                printf("\tje m%d\n", _else);
-                printf("m%d:\n", _then);
+                _print("\tpopl %eax\n");
+                _print("\ttestl %eax,%eax\n");
+                _print("\tje m");
+                _print_number(_else);
+                _print("\nm");
+                _print_number(_then);
+                _print(":\n");
                 tk = statement(tk);
-                printf("\tjmp m%d\n", _end);
-                printf("m%d:\n", _else);
+                _print("\tjmp m");
+                _print_number(_end);
+                _print("\nm");
+                _print_number(_else);
+                _print(":\n");
                 if (tk == 35)
                         tk = statement(tok());
-                printf("m%d:\n", _end);
+                _print("m");
+                _print_number(_end);
+                _print(":\n");
         }
         else if (tk == 36)
         { /* while */
                 int _cond = label_count++;
                 int _end = label_count++;
-                printf("m%d:\n", _cond);
+                _print("m");
+                _print_number(_cond);
+                _print(":\n");
                 tk = expr(tok());
-                printf("\tpopl %%eax\n");
-                printf("\ttestl %%eax,%%eax\n");
-                printf("\tje m%d\n", _end);
+                _print("\tpopl %eax\n");
+                _print("\ttestl %eax,%eax\n");
+                _print("\tje m");
+                _print_number(_end);
+                _print("\n");
                 tk = statement(tk);
-                printf("\tjmp m%d\n", _cond);
-                printf("m%d:\n", _end);
+                _print("\tjmp m");
+                _print_number(_cond);
+                _print("\n");
+                _print("m");
+                _print_number(_end);
+                _print(":\n");
         }
         else if (tk == 40)
         { /* return */
@@ -588,7 +651,9 @@ statement(tk)
 
                 if (tk == 19)
                 {
-                        printf("\tjmp %s.ext\n", function);
+                        _print("\tjmp ");
+                        _print(function);
+                        _print(".ext\n");
                         return tok();
                 }
                 else
@@ -596,11 +661,13 @@ statement(tk)
                         tk = expr(tk);
                         if (tk != 19)
                         {
-                                perror("Expected ; after return expression");
-                                exit(1);
+                                _perror("Expected ; after return expression", 35);
+                                _exit(1);
                         }
-                        printf("\tpopl %%eax\n");
-                        printf("\tjmp %s.ext\n", function);
+                        _print("\tpopl %eax\n");
+                        _print("\tjmp ");
+                        _print(function);
+                        _print(".ext\n");
                         return tok();
                 }
         }
@@ -608,10 +675,14 @@ statement(tk)
         { /* GOTO */
                 tk = tok();
                 if (tk == 32 || tk == 33)
-                        printf("\tjmp %s\n", ID);
+                {
+                        _print("\tjmp ");
+                        _print(ID);
+                        _print("\n");
+                }
                 else
                 {
-                        perror("syntax error\n"), exit(1);
+                        _perror("syntax error\n", 14), _exit(1);
                 }
                 return tok();
         }
@@ -621,18 +692,23 @@ statement(tk)
                 variable_count = 0;
                 for (i = 0; i < 31; ++i)
                         function[i] = buf[i] = ID[i];
-                printf("\tjmp %s.aft\n", ID);
-                printf("%s:", ID);
-                printf("\tpushl %%ebp\n");
-                printf("\tmovl %%esp, %%ebp\n");
+                _print("\tjmp ");
+                _print(ID);
+                _print(".aft\n");
+                _print(ID);
+                _print(":\n");
+                _print("\tpushl %ebp\n");
+                _print("\tmovl %esp, %ebp\n");
                 tk = args(tok());
                 EBPOFF = -4;
                 tk = statement(tk);
-                printf("%s.ext:\n", buf);
-                printf("\tmovl %%ebp, %%esp\n");
-                printf("\tpopl %%ebp\n");
-                printf("\tret\n");
-                printf("%s.aft:\n", buf);
+                _print(buf);
+                _print(".ext:\n");
+                _print("\tmovl %ebp, %esp\n");
+                _print("\tpopl %ebp\n");
+                _print("\tret\n");
+                _print(buf);
+                _print(".aft:\n");
         }
         else if (tk == 37) /* static */
         {
@@ -652,8 +728,8 @@ statement(tk)
 
                 if (tk != 19)
                 {
-                        perror("syntax error\n");
-                        exit(1);
+                        _perror("syntax error\n", 14);
+                        _exit(1);
                 }
                 return tok();
         }
@@ -665,7 +741,7 @@ statement(tk)
                         for (i = 0; i < 31; ++i)
                                 buf[i] = ID[i];
                         createvar();
-                        printf("\tsubl $4, %%esp\n");
+                        _print("\tsubl $4, %esp\n");
                         tk = tok();
                         if (tk == 18)
                         {
@@ -675,8 +751,8 @@ statement(tk)
 
                 if (tk != 19)
                 {
-                        perror("syntax error\n");
-                        exit(1);
+                        _perror("syntax error\n", 14);
+                        _exit(1);
                 }
                 return tok();
         }
@@ -685,10 +761,10 @@ statement(tk)
                 tk = expr(tk);
                 if (tk != 19)
                 {
-                        perror("syntax error\n");
-                        exit(1);
+                        _perror("syntax error\n", 14);
+                        _exit(1);
                 }
-                printf("\tpopl %%eax\n");
+                _print("\tpopl %eax\n");
                 return tok();
         }
 
@@ -698,12 +774,13 @@ statement(tk)
 main(c, v) char **v;
 {
         init();
-        char tk = tok(), i;
-        printf("\t.global main\n");
-        printf("\t.section .text\n");
-        printf("main:");
-        printf("\tpushl %%ebp\n");
-        printf("\tmovl %%esp, %%ebp\n");
+        char tk, i;
+        tk = tok();
+        _print("\t.global main\n");
+        _print("\t.section .text\n");
+        _print("main:");
+        _print("\tpushl %ebp\n");
+        _print("\tmovl %esp, %ebp\n");
 
         for (i = 0; i < 6; ++i)
                 ID[i] = "arg_v"[i];
@@ -711,30 +788,35 @@ main(c, v) char **v;
         for (i = 0; i < 6; ++i)
                 ID[i] = "arg_c"[i];
         createglobal();
-        printf("\tmovl 8(%%ebp), %%eax\n");
-        printf("\tmovl %%eax, (arg_c)\n");
-        printf("\tmovl 12(%%ebp), %%eax\n");
-        printf("\tmovl %%eax, (arg_v)\n");
+        _print("\tmovl 8(%ebp), %eax\n");
+        _print("\tmovl %eax, (arg_c)\n");
+        _print("\tmovl 12(%ebp), %eax\n");
+        _print("\tmovl %eax, (arg_v)\n");
         while (tk)
                 tk = statement(tk);
         if (c == 2 && !cmp(v[1], "/Main"))
-                printf("\tcall Main\n");
-        printf(".ext:\n");
-        printf("\tmovl %%ebp, %%esp\n");
-        printf("\tpopl %%ebp\n");
-        printf("\tpushl %%eax\n");
-        printf("\tmovl $0x01, %%eax\n");
-        printf("\tpopl %%ebx\n");
-        printf("\tint $0x80\n");
-        printf("\t.section .data\n");
+                _print("\tcall Main\n");
+        _print(".ext:\n");
+        _print("\tmovl %ebp, %esp\n");
+        _print("\tpopl %ebp\n");
+        _print("\tpushl %eax\n");
+        _print("\tmovl $0x01, %eax\n");
+        _print("\tpopl %ebx\n");
+        _print("\tint $0x80\n");
+        _print("\t.section .data\n");
         for (i = 0; i < global_count; ++i)
         {
-                printf("%s:\t.long 0\n", variables[i]);
+                _print(variables[i]);
+                _print(":\t.long 0\n");
         }
-        printf("\t.section .rodata\n");
+        _print("\t.section .rodata\n");
         for (i = 0; i < string_count; ++i)
         {
-                printf("string%d:\n\t.ascii \"%s\"\n", i, strings[i]);
+                _print("string");
+                _print_number(i);
+                _print(":\n\t.ascii \"");
+                _print(strings[i]);
+                _print("\"\n");
         }
         return 0;
 }
