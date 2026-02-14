@@ -202,33 +202,33 @@ tok(struct _GLOBAL_ *GLOBAL)
         case '}':
                 tk = 8;
                 return tk;
-        case '[':
-                tk = 9;
-                return tk;
-        case ']':
-                tk = 10;
-                return tk;
-        case '!':
-                tk = 11;
-                return tk;
-        case '@':
-                tk = 12;
-                return tk;
-        case '#':
-                tk = 13;
-                return tk;
-        case '$':
-                tk = 14;
-                return tk;
+        //case '[':
+        //        tk = 9;
+        //        return tk;
+        //case ']':
+        //        tk = 10;
+        //        return tk;
+        //case '!':
+        //        tk = 11;
+        //        return tk;
+        //case '@':
+        //        tk = 12;
+        //        return tk;
+        //case '#':
+        //        tk = 13;
+        //        return tk;
+        //case '$':
+        //        tk = 14;
+        //        return tk;
         case '%':
                 tk = 15;
                 return tk;
-        case '^':
-                tk = 16;
-                return tk;
-        case '&':
-                tk = 17;
-                return tk;
+        //case '^':
+        //        tk = 16;
+        //        return tk;
+        //case '&':
+        //        tk = 17;
+        //        return tk;
         case '=':
                 tk = 18;
                 return tk;
@@ -250,24 +250,24 @@ tok(struct _GLOBAL_ *GLOBAL)
         case '.':
                 tk = 24;
                 return tk;
-        case '\'':
-                tk = 26;
-                return tk;
-        case '\\':
-                tk = 27;
-                return tk;
-        case '|':
-                tk = 28;
-                return tk;
-        case '?':
-                tk = 29;
-                return tk;
-        case '`':
-                tk = 30;
-                return tk;
-        case '~':
-                tk = MAX_LENGTH - 1;
-                return tk;
+        //case '\'':
+        //        tk = 26;
+        //        return tk;
+        //case '\\':
+        //        tk = 27;
+        //        return tk;
+        //case '|':
+        //        tk = 28;
+        //        return tk;
+        //case '?':
+        //        tk = 29;
+        //        return tk;
+        //case '`':
+        //        tk = 30;
+        //        return tk;
+        //case '~':
+        //        tk = MAX_LENGTH - 1;
+        //        return tk;
         case '"':
                 i = 0;
                 while (1)

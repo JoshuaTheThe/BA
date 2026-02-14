@@ -2,7 +2,7 @@ override MAKEFLAGS += -rR
 override OUTPUT := ba
 override CC := cc -m32
 override LD := ld -m elf_i386
-override CC_FLAGS := -std=c89 -Os -ffreestanding -nostdlib \
+override CC_FLAGS := -Os -ffreestanding -nostdlib \
                      -fno-stack-protector -fno-builtin \
                      -fomit-frame-pointer -fno-unwind-tables \
                      -fno-asynchronous-unwind-tables -fno-ident \
