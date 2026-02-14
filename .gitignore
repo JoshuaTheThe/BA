@@ -1,3 +1,5 @@
 .fh
 obj
 bin
+.S
+*.
