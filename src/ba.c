@@ -1,4 +1,9 @@
 
+#pragma pack(1)
+
+#define MAX_LENGTH (32)
+#define MAX_N (256)
+
 extern int _print(const char *);
 extern int _perror(const char *, int);
 extern void _exit(int);
@@ -6,11 +11,11 @@ extern int _read(int, char *, int);
 
 struct _GLOBAL_
 {
-        int NUMBER, PUSHBACK, EBPOFF;
-        char ID[32];
-        char variables[256][32];
-        char strings[256][32], function[32];
-        int ebpoff[256], string_count, label_count, variable_count, global_count;
+        char strings[MAX_LENGTH*MAX_N];
+        char variables[MAX_N][MAX_LENGTH];
+        int ebpoff[MAX_N];
+        char ID[MAX_LENGTH],function[MAX_LENGTH];
+        int NUMBER, PUSHBACK, EBPOFF, string_count, label_count, variable_count, global_count;
 };
 
 extern expr(struct _GLOBAL_ *,int);
@@ -41,15 +46,15 @@ _print_number(n)
 createstr(struct _GLOBAL_ *GLOBAL)
 {
         char i;
-        for (i = 0; i < 31; ++i)
-                GLOBAL->strings[GLOBAL->string_count][i] = GLOBAL->ID[i];
+        for (i = 0; i < MAX_LENGTH - 1; ++i)
+                GLOBAL->strings[GLOBAL->string_count * 32 + i] = GLOBAL->ID[i];
         GLOBAL->string_count++;
 }
 
 createvar(struct _GLOBAL_ *GLOBAL)
 {
         char i;
-        for (i = 0; i < 31; ++i)
+        for (i = 0; i < MAX_LENGTH - 1; ++i)
                 GLOBAL->variables[GLOBAL->variable_count + GLOBAL->global_count][i] = GLOBAL->ID[i];
         GLOBAL->ebpoff[GLOBAL->variable_count + GLOBAL->global_count] = GLOBAL->EBPOFF;
         GLOBAL->EBPOFF -= 4;
@@ -59,7 +64,7 @@ createvar(struct _GLOBAL_ *GLOBAL)
 createglobal(struct _GLOBAL_ *GLOBAL)
 {
         char i;
-        for (i = 0; i < 31; ++i)
+        for (i = 0; i < MAX_LENGTH - 1; ++i)
                 GLOBAL->variables[GLOBAL->variable_count + GLOBAL->global_count][i] = GLOBAL->ID[i];
         GLOBAL->global_count++;
 }
@@ -67,7 +72,7 @@ createglobal(struct _GLOBAL_ *GLOBAL)
 getvar(struct _GLOBAL_ *GLOBAL, char *buf)
 {
         int i;
-        for (i = 0; i < 255; ++i)
+        for (i = 0; i < MAX_N - 1; ++i)
                 if (!cmp(buf, GLOBAL->variables[i]))
                         return i;
         return -1;
@@ -163,7 +168,7 @@ checkkeyword(struct _GLOBAL_ *GLOBAL, int tk)
 tok(struct _GLOBAL_ *GLOBAL)
 {
         int tk, chr, i;
-        for (i = 0; i < 31; ++i)
+        for (i = 0; i < MAX_LENGTH - 1; ++i)
                 GLOBAL->ID[i] = 0;
         GLOBAL->NUMBER = i = tk = 0;
         do
@@ -261,7 +266,7 @@ tok(struct _GLOBAL_ *GLOBAL)
                 tk = 30;
                 return tk;
         case '~':
-                tk = 31;
+                tk = MAX_LENGTH - 1;
                 return tk;
         case '"':
                 i = 0;
@@ -275,7 +280,7 @@ tok(struct _GLOBAL_ *GLOBAL)
                                 _perror("Unterminated string", 20);
                                 _exit(1);
                         }
-                        if (i < 31)
+                        if (i < MAX_LENGTH - 1)
                         {
                                 GLOBAL->ID[i] = chr;
                                 i++;
@@ -355,7 +360,7 @@ assignment_typeB(struct _GLOBAL_ *GLOBAL, int tk, char *buf)
 primary(struct _GLOBAL_ *GLOBAL, int tk)
 {
         char buf[32], i;
-        for (i = 0; i < 31; ++i)
+        for (i = 0; i < MAX_LENGTH - 1; ++i)
                 buf[i] = GLOBAL->ID[i];
         if (tk == 5)
         {
@@ -692,7 +697,7 @@ statement(struct _GLOBAL_ *GLOBAL, int tk)
         { /* fn */
                 tk = tok(GLOBAL);
                 GLOBAL->variable_count = 0;
-                for (i = 0; i < 31; ++i)
+                for (i = 0; i < MAX_LENGTH - 1; ++i)
                         GLOBAL->function[i] = buf[i] = GLOBAL->ID[i];
                 _print("\tjmp ");
                 _print(GLOBAL->ID);
@@ -717,7 +722,7 @@ statement(struct _GLOBAL_ *GLOBAL, int tk)
                 do
                 {
                         tk = tok(GLOBAL);
-                        for (i = 0; i < 31; ++i)
+                        for (i = 0; i < MAX_LENGTH - 1; ++i)
                                 buf[i] = GLOBAL->ID[i];
                         createglobal(GLOBAL);
 
@@ -740,7 +745,7 @@ statement(struct _GLOBAL_ *GLOBAL, int tk)
                 do
                 {
                         tk = tok(GLOBAL);
-                        for (i = 0; i < 31; ++i)
+                        for (i = 0; i < MAX_LENGTH - 1; ++i)
                                 buf[i] = GLOBAL->ID[i];
                         createvar(GLOBAL);
                         _print("\tsubl $4, %esp\n");
@@ -818,7 +823,7 @@ main(c, v) char **v;
                 _print("string");
                 _print_number(i);
                 _print(":\n\t.ascii \"");
-                _print(GLOBAL.strings[i]);
+                _print(&GLOBAL.strings[i * 32]);
                 _print("\"\n");
         }
         return 0;
