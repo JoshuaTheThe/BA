@@ -6,9 +6,7 @@ SECTIONS
     . = 0x08048000;
     
     .text : {
-        *(.text)
         *(.text.*)
-        *(.rodata)
         *(.rodata.*)
     }
     
