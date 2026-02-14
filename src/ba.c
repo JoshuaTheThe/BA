@@ -284,7 +284,26 @@ tok(struct _GLOBAL_ *GLOBAL)
                 return tk;
         }
 
-        while ((chr >= 'A' && chr <= 'Z') || (chr >= 'a' && chr <= 'z') || chr == '_')
+        while ((chr >= '0' && chr <= '9') || (i && chr == '_'))
+        {
+                tk = 33;
+                GLOBAL->ID[i] = chr;
+                if (chr != '_')
+                {
+                        GLOBAL->NUMBER *= 10;
+                        GLOBAL->NUMBER += chr - '0';
+                }
+                i = i + 1;
+                chr = getc(GLOBAL);
+        }
+
+        if (tk)
+        {
+                ungetc(GLOBAL,chr);
+                return tk;
+        }
+
+        while ((chr >= '0' && chr <= '9') || (chr >= 'A' && chr <= 'Z') || (chr >= 'a' && chr <= 'z') || chr == '_')
         {
                 tk = 32;
                 GLOBAL->ID[i] = chr;
@@ -301,25 +320,6 @@ tok(struct _GLOBAL_ *GLOBAL)
                 }
                 ungetc(GLOBAL, chr);
                 tk = checkkeyword(GLOBAL, tk);
-                return tk;
-        }
-
-        while ((chr >= '0' && chr <= '9') || chr == '_')
-        {
-                tk = 33;
-                GLOBAL->ID[i] = chr;
-                if (chr != '_')
-                {
-                        GLOBAL->NUMBER *= 10;
-                        GLOBAL->NUMBER += chr - '0';
-                }
-                i = i + 1;
-                chr = getc(GLOBAL);
-        }
-
-        if (tk)
-        {
-                ungetc(GLOBAL,chr);
                 return tk;
         }
 
