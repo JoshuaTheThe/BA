@@ -61,11 +61,11 @@ createvar(struct _GLOBAL_ *GLOBAL)
         GLOBAL->variable_count++;
 }
 
-createglobal(struct _GLOBAL_ *GLOBAL)
+createglobal(struct _GLOBAL_ *GLOBAL, char *buf)
 {
         char i;
         for (i = 0; i < MAX_LENGTH - 1; ++i)
-                GLOBAL->variables[GLOBAL->variable_count + GLOBAL->global_count][i] = GLOBAL->ID[i];
+                GLOBAL->variables[GLOBAL->variable_count + GLOBAL->global_count][i] = buf[i];
         GLOBAL->global_count++;
 }
 
@@ -699,7 +699,7 @@ statement(struct _GLOBAL_ *GLOBAL, int tk)
                         tk = tok(GLOBAL);
                         for (i = 0; i < MAX_LENGTH - 1; ++i)
                                 buf[i] = GLOBAL->ID[i];
-                        createglobal(GLOBAL);
+                        createglobal(GLOBAL, GLOBAL->ID);
 
                         tk = tok(GLOBAL);
                         if (tk == 18)
@@ -760,12 +760,8 @@ main(c, v) char **v;
         char tk, i;
         tk = tok(&GLOBAL);
         _print("\t.global main\n\t.section .text\nmain:\tpushl %ebp\n\tmovl %esp, %ebp\n");
-        for (i = 0; i < 6; ++i)
-                GLOBAL.ID[i] = "arg_v"[i];
-        createglobal(&GLOBAL);
-        for (i = 0; i < 6; ++i)
-                GLOBAL.ID[i] = "arg_c"[i];
-        createglobal(&GLOBAL);
+        createglobal(&GLOBAL, "arg_v");
+        createglobal(&GLOBAL, "arg_c");
         _print("\tmovl 8(%ebp), %eax\n\tmovl %eax, (arg_c)\n\tmovl 12(%ebp), %eax\n\tmovl %eax, (arg_v)\n");
         while (tk)
                 tk = statement(&GLOBAL, tk);
@@ -777,7 +773,7 @@ main(c, v) char **v;
                 _print(GLOBAL.variables[i]);
                 _print(":\t.long 0\n");
         }
-        _print("\t.section .rodata\n");
+        // _print("\t.section .rodata\n");
         for (i = 0; i < GLOBAL.string_count; ++i)
         {
                 _print("string");
