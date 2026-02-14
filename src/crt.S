@@ -4,6 +4,7 @@
         .global _perror
         .global _read
         .global _print
+        .extern main
 _start:
         popl    %ecx
         movl    %esp, %edx
