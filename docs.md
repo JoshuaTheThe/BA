@@ -11,7 +11,7 @@ DESCRIPTION
        BA is a minimal systems programming language for the
        PDP-11 and similar word-oriented machines.  All data
        types are one word.  Storage is explicitly controlled
-       with 'static' and 'let' declarations.
+       with 'static' and 'auto' declarations.
 
        keywords list:
        if       else    while   static  auto     goto    return  extern
