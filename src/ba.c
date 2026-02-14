@@ -78,13 +78,6 @@ getvar(struct _GLOBAL_ *GLOBAL, char *buf)
         return -1;
 }
 
-init(struct _GLOBAL_ *GLOBAL)
-{
-        GLOBAL->label_count = GLOBAL->string_count = GLOBAL->global_count = GLOBAL->variable_count = 0;
-        GLOBAL->PUSHBACK = -1;
-        GLOBAL->EBPOFF = -4;
-}
-
 getc(struct _GLOBAL_ *GLOBAL)
 {
         char chr;
@@ -756,7 +749,9 @@ statement(struct _GLOBAL_ *GLOBAL, int tk)
 main(c, v) char **v;
 {
         struct _GLOBAL_ GLOBAL;
-        init(&GLOBAL);
+        GLOBAL.label_count = GLOBAL.string_count = GLOBAL.global_count = GLOBAL.variable_count = 0;
+        GLOBAL.PUSHBACK = -1;
+        GLOBAL.EBPOFF = -4;
         char tk, i;
         tk = tok(&GLOBAL);
         _print("\t.global main\n\t.section .text\nmain:\tpushl %ebp\n\tmovl %esp, %ebp\n");
