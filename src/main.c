@@ -7,7 +7,7 @@ extern int read(int, char *, int);
 static STDIN, STDOUT, NUMBER, PUSHBACK, EBPOFF;
 static char ID[32];
 static char variables[255][32], variable_count, global_count;
-static char strings[8192][32];
+static char strings[8192][32], function[32];
 static int ebpoff[255], string_count, label_count;
 
 extern expr(int);
@@ -28,7 +28,6 @@ createvar()
         ebpoff[variable_count + global_count] = EBPOFF;
         EBPOFF -= 4;
         variable_count++;
-        printf("\tsubl $4, %%esp\n");
 }
 
 createglobal()
@@ -589,7 +588,7 @@ statement(tk)
 
                 if (tk == 19)
                 {
-                        printf("\tjmp .ext\n");
+                        printf("\tjmp %s.ext\n", function);
                         return tok();
                 }
                 else
@@ -601,7 +600,7 @@ statement(tk)
                                 exit(1);
                         }
                         printf("\tpopl %%eax\n");
-                        printf("\tjmp .ext\n");
+                        printf("\tjmp %s.ext\n", function);
                         return tok();
                 }
         }
@@ -621,7 +620,7 @@ statement(tk)
                 tk = tok();
                 variable_count = 0;
                 for (i = 0; i < 31; ++i)
-                        buf[i] = ID[i];
+                        function[i] = buf[i] = ID[i];
                 printf("\tjmp %s.aft\n", ID);
                 printf("%s:", ID);
                 printf("\tpushl %%ebp\n");
@@ -666,6 +665,7 @@ statement(tk)
                         for (i = 0; i < 31; ++i)
                                 buf[i] = ID[i];
                         createvar();
+                        printf("\tsubl $4, %%esp\n");
                         tk = tok();
                         if (tk == 18)
                         {
