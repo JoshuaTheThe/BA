@@ -3,13 +3,17 @@ extern int _print(const char *);
 extern int _perror(const char *, int);
 extern void _exit(int);
 extern int _read(int, char *, int);
-extern expr(int);
 
-int STDIN, STDOUT, NUMBER, PUSHBACK, EBPOFF;
-char ID[32];
-char variables[256][32];
-char strings[256][32], function[32];
-int ebpoff[256], string_count, label_count, variable_count, global_count;
+struct _GLOBAL_
+{
+        int NUMBER, PUSHBACK, EBPOFF;
+        char ID[32];
+        char variables[256][32];
+        char strings[256][32], function[32];
+        int ebpoff[256], string_count, label_count, variable_count, global_count;
+};
+
+extern expr(struct _GLOBAL_ *,int);
 
 _print_number(n)
 {
@@ -34,67 +38,65 @@ _print_number(n)
         _print(buf + i);
 }
 
-createstr()
+createstr(struct _GLOBAL_ *GLOBAL)
 {
         char i;
         for (i = 0; i < 31; ++i)
-                strings[string_count][i] = ID[i];
-        string_count++;
+                GLOBAL->strings[GLOBAL->string_count][i] = GLOBAL->ID[i];
+        GLOBAL->string_count++;
 }
 
-createvar()
+createvar(struct _GLOBAL_ *GLOBAL)
 {
         char i;
         for (i = 0; i < 31; ++i)
-                variables[variable_count + global_count][i] = ID[i];
-        ebpoff[variable_count + global_count] = EBPOFF;
-        EBPOFF -= 4;
-        variable_count++;
+                GLOBAL->variables[GLOBAL->variable_count + GLOBAL->global_count][i] = GLOBAL->ID[i];
+        GLOBAL->ebpoff[GLOBAL->variable_count + GLOBAL->global_count] = GLOBAL->EBPOFF;
+        GLOBAL->EBPOFF -= 4;
+        GLOBAL->variable_count++;
 }
 
-createglobal()
+createglobal(struct _GLOBAL_ *GLOBAL)
 {
         char i;
         for (i = 0; i < 31; ++i)
-                variables[variable_count + global_count][i] = ID[i];
-        global_count++;
+                GLOBAL->variables[GLOBAL->variable_count + GLOBAL->global_count][i] = GLOBAL->ID[i];
+        GLOBAL->global_count++;
 }
 
-getvar(buf) char *buf;
+getvar(struct _GLOBAL_ *GLOBAL, char *buf)
 {
         int i;
         for (i = 0; i < 255; ++i)
-                if (!cmp(buf, variables[i]))
+                if (!cmp(buf, GLOBAL->variables[i]))
                         return i;
         return -1;
 }
 
-init()
+init(struct _GLOBAL_ *GLOBAL)
 {
-        label_count = string_count = global_count = variable_count = 0;
-        STDIN = 0;
-        STDOUT = 1;
-        PUSHBACK = -1;
-        EBPOFF = -4;
+        GLOBAL->label_count = GLOBAL->string_count = GLOBAL->global_count = GLOBAL->variable_count = 0;
+        GLOBAL->PUSHBACK = -1;
+        GLOBAL->EBPOFF = -4;
 }
 
-getc()
+getc(struct _GLOBAL_ *GLOBAL)
 {
         char chr;
         chr = -1;
-        if (PUSHBACK != -1)
+        if (GLOBAL->PUSHBACK != -1)
         {
-                chr = PUSHBACK;
-                PUSHBACK = -1;
+                chr = GLOBAL->PUSHBACK;
+                GLOBAL->PUSHBACK = -1;
                 return chr;
         }
-        _read(STDIN, &chr, 1);
+        _read(0, &chr, 1);
         return chr;
 }
 
-ungetc(c)
+ungetc(struct _GLOBAL_ *GLOBAL, int c)
 {
-        PUSHBACK = c;
+        GLOBAL->PUSHBACK = c;
 }
 
 cmp(a, b) char *a, *b;
@@ -106,51 +108,51 @@ cmp(a, b) char *a, *b;
         return *a - *b;
 }
 
-checkkeyword(tk)
+checkkeyword(struct _GLOBAL_ *GLOBAL, int tk)
 {
         if (tk != 32)
                 return tk;
-        if (!cmp(ID, "if"))
+        if (!cmp(GLOBAL->ID, "if"))
         {
                 return 34;
         }
-        if (!cmp(ID, "else"))
+        if (!cmp(GLOBAL->ID, "else"))
         {
                 return 35;
         }
-        if (!cmp(ID, "while"))
+        if (!cmp(GLOBAL->ID, "while"))
         {
                 return 36;
         }
-        if (!cmp(ID, "static"))
+        if (!cmp(GLOBAL->ID, "static"))
         {
                 return 37;
         }
-        if (!cmp(ID, "auto"))
+        if (!cmp(GLOBAL->ID, "auto"))
         {
                 return 38;
         }
-        if (!cmp(ID, "goto"))
+        if (!cmp(GLOBAL->ID, "goto"))
         {
                 return 39;
         }
-        if (!cmp(ID, "return"))
+        if (!cmp(GLOBAL->ID, "return"))
         {
                 return 40;
         }
-        if (!cmp(ID, "extern"))
+        if (!cmp(GLOBAL->ID, "extern"))
         {
                 return 41;
         }
-        if (!cmp(ID, "asm"))
+        if (!cmp(GLOBAL->ID, "asm"))
         {
                 return 42;
         }
-        if (!cmp(ID, "fn"))
+        if (!cmp(GLOBAL->ID, "fn"))
         {
                 return 43;
         }
-        if (!cmp(ID, "EOF"))
+        if (!cmp(GLOBAL->ID, "EOF"))
         {
                 return 0;
         }
@@ -158,15 +160,15 @@ checkkeyword(tk)
         return tk;
 }
 
-tok()
+tok(struct _GLOBAL_ *GLOBAL)
 {
         int tk, chr, i;
         for (i = 0; i < 31; ++i)
-                ID[i] = 0;
-        NUMBER = i = tk = 0;
+                GLOBAL->ID[i] = 0;
+        GLOBAL->NUMBER = i = tk = 0;
         do
         {
-                chr = getc();
+                chr = getc(GLOBAL);
         } while (chr == ' ' || chr == '\t' || chr == '\n' || chr == '\r');
 
         switch (chr)
@@ -265,7 +267,7 @@ tok()
                 i = 0;
                 while (1)
                 {
-                        chr = getc();
+                        chr = getc(GLOBAL);
                         if (chr == '"')
                                 break;
                         if (chr == -1)
@@ -275,11 +277,11 @@ tok()
                         }
                         if (i < 31)
                         {
-                                ID[i] = chr;
+                                GLOBAL->ID[i] = chr;
                                 i++;
                         }
                 }
-                ID[i] = 0;
+                GLOBAL->ID[i] = 0;
                 tk = 25;
                 return tk;
         }
@@ -287,9 +289,9 @@ tok()
         while ((chr >= 'A' && chr <= 'Z') || (chr >= 'a' && chr <= 'z') || chr == '_')
         {
                 tk = 32;
-                ID[i] = chr;
+                GLOBAL->ID[i] = chr;
                 i = i + 1;
-                chr = getc();
+                chr = getc(GLOBAL);
         }
 
         if (tk)
@@ -299,41 +301,41 @@ tok()
                         tk = 64;
                         return tk;
                 }
-                ungetc(chr);
-                tk = checkkeyword(tk);
+                ungetc(GLOBAL, chr);
+                tk = checkkeyword(GLOBAL, tk);
                 return tk;
         }
 
         while ((chr >= '0' && chr <= '9') || chr == '_')
         {
                 tk = 33;
-                ID[i] = chr;
+                GLOBAL->ID[i] = chr;
                 if (chr != '_')
                 {
-                        NUMBER *= 10;
-                        NUMBER += chr - '0';
+                        GLOBAL->NUMBER *= 10;
+                        GLOBAL->NUMBER += chr - '0';
                 }
                 i = i + 1;
-                chr = getc();
+                chr = getc(GLOBAL);
         }
 
         if (tk)
         {
-                ungetc(chr);
+                ungetc(GLOBAL,chr);
                 return tk;
         }
 
         return tk;
 }
 
-assignment_typeB(tk, buf) char *buf;
+assignment_typeB(struct _GLOBAL_ *GLOBAL, int tk, char *buf)
 {
         char i;
-        tk = expr(tk);
-        i = getvar(buf);
+        tk = expr(GLOBAL,tk);
+        i = getvar(GLOBAL, buf);
         if (i == -1)
                 _perror("not found\n", 11), _exit(1);
-        if (i < global_count)
+        if (i < GLOBAL->global_count)
         {
                 _print("\tlea ");
                 _print(buf);
@@ -342,7 +344,7 @@ assignment_typeB(tk, buf) char *buf;
         else
         {
                 _print("\tlea ");
-                _print_number(ebpoff[i]);
+                _print_number(GLOBAL->ebpoff[i]);
                 _print("(%ebp), %ebx\n");
         }
         _print("\tpopl (%ebx)\n");
@@ -350,44 +352,44 @@ assignment_typeB(tk, buf) char *buf;
         return tk;
 }
 
-primary(tk)
+primary(struct _GLOBAL_ *GLOBAL, int tk)
 {
         char buf[32], i;
         for (i = 0; i < 31; ++i)
-                buf[i] = ID[i];
+                buf[i] = GLOBAL->ID[i];
         if (tk == 5)
         {
-                tk = expr(tok());
+                tk = expr(GLOBAL,tok(GLOBAL));
                 if (tk != 6)
                         _perror("syntax error\n", 14), _exit(1);
-                return tok();
+                return tok(GLOBAL);
         }
         if (tk == 25)
         {
                 _print("\tlea (string");
-                _print_number(string_count);
+                _print_number(GLOBAL->string_count);
                 _print("), %ebx\n");
                 _print("\tpushl %ebx\n");
-                createstr();
-                return tok();
+                createstr(GLOBAL);
+                return tok(GLOBAL);
         }
         if (tk == 33)
         {
                 _print("\tpushl $");
-                _print(ID);
+                _print(GLOBAL->ID);
                 _print("\n");
-                return tok();
+                return tok(GLOBAL);
         }
         if (tk == 32)
         {
-                tk = tok();
+                tk = tok(GLOBAL);
                 if (tk == 18)
-                        return assignment_typeB(tok(), buf);
+                        return assignment_typeB(GLOBAL, tok(GLOBAL), buf);
                 else if (tk == 5)
                 {
                         _print("\tpushl %esi\n");
                         _print("\tmovl %esp,%esi\n");
-                        tk = expr(tok());
+                        tk = expr(GLOBAL,tok(GLOBAL));
                         _print("\tcall ");
                         _print(buf);
                         _print("\n\tmovl %esi,%esp\n");
@@ -395,14 +397,14 @@ primary(tk)
                         _print("\tpush %eax\n");
                         if (tk != 6)
                                 _perror("syntax error\n", 14), _exit(1);
-                        tk = tok();
+                        tk = tok(GLOBAL);
                 }
                 else
                 {
-                        i = getvar(buf);
+                        i = getvar(GLOBAL, buf);
                         if (i == -1)
                                 _perror("not found\n", 11), _exit(1);
-                        if (i < global_count)
+                        if (i < GLOBAL->global_count)
                         {
                                 _print("\tpushl (");
                                 _print(buf);
@@ -411,7 +413,7 @@ primary(tk)
                         else
                         {
                                 _print("\tpushl ");
-                                _print_number(ebpoff[i]);
+                                _print_number(GLOBAL->ebpoff[i]);
                                 _print("(%ebp)\n");
                         }
                 }
@@ -420,13 +422,13 @@ primary(tk)
         return tk;
 }
 
-multiplicative(tk)
+multiplicative(struct _GLOBAL_ *GLOBAL, int tk)
 {
-        tk = primary(tk);
+        tk = primary(GLOBAL, tk);
         while (tk == 3 || tk == 4 || tk == 15)
         {
                 int _ = tk;
-                tk = primary(tok());
+                tk = primary(GLOBAL, tok(GLOBAL));
                 _print("\tpopl %ebx\n");
                 _print("\tpopl %eax\n");
                 if (_ == 3)
@@ -447,13 +449,13 @@ multiplicative(tk)
         return tk;
 }
 
-additive(tk)
+additive(struct _GLOBAL_ *GLOBAL, int tk)
 {
-        tk = multiplicative(tk);
+        tk = multiplicative(GLOBAL, tk);
         while (tk == 1 || tk == 2)
         {
                 int _ = tk;
-                tk = multiplicative(tok());
+                tk = multiplicative(GLOBAL, tok(GLOBAL));
                 _print("\tpopl %ebx\n");
                 _print("\tpopl %eax\n");
                 if (_ == 1)
@@ -465,13 +467,13 @@ additive(tk)
         return tk;
 }
 
-relational(tk)
+relational(struct _GLOBAL_ *GLOBAL, int tk)
 {
-        tk = additive(tk);
+        tk = additive(GLOBAL, tk);
         while (tk == 21 || tk == 22)
         {
                 int _ = tk;
-                tk = additive(tok());
+                tk = additive(GLOBAL, tok(GLOBAL));
                 _print("\tpopl %ebx\n");
                 _print("\tpopl %eax\n");
                 _print("\tcmpl %ebx, %eax\n");
@@ -485,12 +487,12 @@ relational(tk)
         return tk;
 }
 
-assignment_typeA(tk)
+assignment_typeA(struct _GLOBAL_ *GLOBAL, int tk)
 {
-        tk = relational(tk);
+        tk = relational(GLOBAL, tk);
         while (tk == 18)
         {
-                tk = relational(tok());
+                tk = relational(GLOBAL, tok(GLOBAL));
                 _print("\tpopl %ebx\n");
                 _print("\tpopl %eax\n");
                 _print("\tmovl %ebx, (%eax)\n");
@@ -498,69 +500,69 @@ assignment_typeA(tk)
         return tk;
 }
 
-expr(tk)
+expr(struct _GLOBAL_ *GLOBAL, int tk)
 {
-        tk = assignment_typeA(tk);
+        tk = assignment_typeA(GLOBAL, tk);
         while (tk == 23)
         {
-                tk = assignment_typeA(tok());
+                tk = assignment_typeA(GLOBAL, tok(GLOBAL));
         }
         return tk;
 }
 
-args(tk)
+args(struct _GLOBAL_ *GLOBAL, int tk)
 {
         int i, temp;
-        EBPOFF = 8;
+        GLOBAL->EBPOFF = 8;
         if (tk == 5)
         {
-                tk = tok();
+                tk = tok(GLOBAL);
                 while (tk != 6)
                 {
                         if (tk == 32)
                         {
-                                createvar();
+                                createvar(GLOBAL);
                         }
-                        tk = tok();
-                        EBPOFF += 4;
+                        tk = tok(GLOBAL);
+                        GLOBAL->EBPOFF += 4;
                 }
-                tk = tok();
+                tk = tok(GLOBAL);
         }
 
-        int param_start = global_count;
-        int param_end = (global_count + variable_count) - 1;
+        int param_start = GLOBAL->global_count;
+        int param_end = (GLOBAL->global_count + GLOBAL->variable_count) - 1;
 
         for (i = 0; i < (param_end - param_start + 1) / 2; i++)
         {
-                temp = ebpoff[param_start + i];
-                ebpoff[param_start + i] = ebpoff[param_end - i];
-                ebpoff[param_end - i] = temp;
+                temp = GLOBAL->ebpoff[param_start + i];
+                GLOBAL->ebpoff[param_start + i] = GLOBAL->ebpoff[param_end - i];
+                GLOBAL->ebpoff[param_end - i] = temp;
         }
 
         return tk;
 }
 
-statement(tk)
+statement(struct _GLOBAL_ *GLOBAL, int tk)
 {
         char buf[32], i;
         if (tk == 7)
         {
-                tk = tok();
+                tk = tok(GLOBAL);
                 while (tk != 8)
                 {
-                        tk = statement(tk);
+                        tk = statement(GLOBAL, tk);
                 }
-                return tok();
+                return tok(GLOBAL);
         }
         else if (tk == 41)
         { /* extern */
                 do
                 {
-                        tk = tok();
+                        tk = tok(GLOBAL);
                         if (tk == 32)
                         {
                                 _print("\t.extern ");
-                                _print(ID);
+                                _print(GLOBAL->ID);
                                 _print("\n");
                         }
                         else
@@ -568,43 +570,43 @@ statement(tk)
                                 _perror("syntax error\n", 14);
                                 _exit(1);
                         }
-                        tk = tok();
+                        tk = tok(GLOBAL);
                 } while (tk == 23);
                 if (tk != 19)
                 {
                         _perror("syntax error\n", 14);
                         _exit(1);
                 }
-                return tok();
+                return tok(GLOBAL);
         }
         else if (tk == 64)
         { /* Label */
                 _print("\t");
-                _print(ID);
+                _print(GLOBAL->ID);
                 _print(":\n");
-                return tok();
+                return tok(GLOBAL);
         }
         else if (tk == 42)
         { /* asm */
-                tk = tok();
+                tk = tok(GLOBAL);
                 if (tk == 25)
                 {
                         _print("\t");
-                        _print(ID);
+                        _print(GLOBAL->ID);
                         _print("\n");
                 }
                 else
                 {
                         _perror("syntax error\n", 14), _exit(1);
                 }
-                return tok();
+                return tok(GLOBAL);
         }
         else if (tk == 34)
         { /* if-else */
-                int _then = label_count++;
-                int _else = label_count++;
-                int _end = label_count++;
-                tk = expr(tok());
+                int _then = GLOBAL->label_count++;
+                int _else = GLOBAL->label_count++;
+                int _end = GLOBAL->label_count++;
+                tk = expr(GLOBAL,tok(GLOBAL));
                 _print("\tpopl %eax\n");
                 _print("\ttestl %eax,%eax\n");
                 _print("\tje m");
@@ -612,32 +614,32 @@ statement(tk)
                 _print("\nm");
                 _print_number(_then);
                 _print(":\n");
-                tk = statement(tk);
+                tk = statement(GLOBAL, tk);
                 _print("\tjmp m");
                 _print_number(_end);
                 _print("\nm");
                 _print_number(_else);
                 _print(":\n");
                 if (tk == 35)
-                        tk = statement(tok());
+                        tk = statement(GLOBAL, tok(GLOBAL));
                 _print("m");
                 _print_number(_end);
                 _print(":\n");
         }
         else if (tk == 36)
         { /* while */
-                int _cond = label_count++;
-                int _end = label_count++;
+                int _cond = GLOBAL->label_count++;
+                int _end = GLOBAL->label_count++;
                 _print("m");
                 _print_number(_cond);
                 _print(":\n");
-                tk = expr(tok());
+                tk = expr(GLOBAL,tok(GLOBAL));
                 _print("\tpopl %eax\n");
                 _print("\ttestl %eax,%eax\n");
                 _print("\tje m");
                 _print_number(_end);
                 _print("\n");
-                tk = statement(tk);
+                tk = statement(GLOBAL, tk);
                 _print("\tjmp m");
                 _print_number(_cond);
                 _print("\n");
@@ -647,18 +649,18 @@ statement(tk)
         }
         else if (tk == 40)
         { /* return */
-                tk = tok();
+                tk = tok(GLOBAL);
 
                 if (tk == 19)
                 {
                         _print("\tjmp ");
-                        _print(function);
+                        _print(GLOBAL->function);
                         _print(".ext\n");
-                        return tok();
+                        return tok(GLOBAL);
                 }
                 else
                 {
-                        tk = expr(tk);
+                        tk = expr(GLOBAL,tk);
                         if (tk != 19)
                         {
                                 _perror("Expected ; after return expression", 35);
@@ -666,42 +668,42 @@ statement(tk)
                         }
                         _print("\tpopl %eax\n");
                         _print("\tjmp ");
-                        _print(function);
+                        _print(GLOBAL->function);
                         _print(".ext\n");
-                        return tok();
+                        return tok(GLOBAL);
                 }
         }
         else if (tk == 39)
         { /* GOTO */
-                tk = tok();
+                tk = tok(GLOBAL);
                 if (tk == 32 || tk == 33)
                 {
                         _print("\tjmp ");
-                        _print(ID);
+                        _print(GLOBAL->ID);
                         _print("\n");
                 }
                 else
                 {
                         _perror("syntax error\n", 14), _exit(1);
                 }
-                return tok();
+                return tok(GLOBAL);
         }
         else if (tk == 43)
         { /* fn */
-                tk = tok();
-                variable_count = 0;
+                tk = tok(GLOBAL);
+                GLOBAL->variable_count = 0;
                 for (i = 0; i < 31; ++i)
-                        function[i] = buf[i] = ID[i];
+                        GLOBAL->function[i] = buf[i] = GLOBAL->ID[i];
                 _print("\tjmp ");
-                _print(ID);
+                _print(GLOBAL->ID);
                 _print(".aft\n");
-                _print(ID);
+                _print(GLOBAL->ID);
                 _print(":\n");
                 _print("\tpushl %ebp\n");
                 _print("\tmovl %esp, %ebp\n");
-                tk = args(tok());
-                EBPOFF = -4;
-                tk = statement(tk);
+                tk = args(GLOBAL, tok(GLOBAL));
+                GLOBAL->EBPOFF = -4;
+                tk = statement(GLOBAL, tk);
                 _print(buf);
                 _print(".ext:\n");
                 _print("\tmovl %ebp, %esp\n");
@@ -714,15 +716,15 @@ statement(tk)
         {
                 do
                 {
-                        tk = tok();
+                        tk = tok(GLOBAL);
                         for (i = 0; i < 31; ++i)
-                                buf[i] = ID[i];
-                        createglobal();
+                                buf[i] = GLOBAL->ID[i];
+                        createglobal(GLOBAL);
 
-                        tk = tok();
+                        tk = tok(GLOBAL);
                         if (tk == 18)
                         {
-                                tk = assignment_typeB(tok(), buf);
+                                tk = assignment_typeB(GLOBAL, tok(GLOBAL), buf);
                         }
                 } while (tk == 23);
 
@@ -731,21 +733,21 @@ statement(tk)
                         _perror("syntax error\n", 14);
                         _exit(1);
                 }
-                return tok();
+                return tok(GLOBAL);
         }
         else if (tk == 38)
         {
                 do
                 {
-                        tk = tok();
+                        tk = tok(GLOBAL);
                         for (i = 0; i < 31; ++i)
-                                buf[i] = ID[i];
-                        createvar();
+                                buf[i] = GLOBAL->ID[i];
+                        createvar(GLOBAL);
                         _print("\tsubl $4, %esp\n");
-                        tk = tok();
+                        tk = tok(GLOBAL);
                         if (tk == 18)
                         {
-                                tk = assignment_typeB(tok(), buf);
+                                tk = assignment_typeB(GLOBAL, tok(GLOBAL), buf);
                         }
                 } while (tk == 23);
 
@@ -754,18 +756,18 @@ statement(tk)
                         _perror("syntax error\n", 14);
                         _exit(1);
                 }
-                return tok();
+                return tok(GLOBAL);
         }
         else if (tk)
         {
-                tk = expr(tk);
+                tk = expr(GLOBAL, tk);
                 if (tk != 19)
                 {
                         _perror("syntax error\n", 14);
                         _exit(1);
                 }
                 _print("\tpopl %eax\n");
-                return tok();
+                return tok(GLOBAL);
         }
 
         return tk;
@@ -773,9 +775,10 @@ statement(tk)
 
 main(c, v) char **v;
 {
-        init();
+        struct _GLOBAL_ GLOBAL;
+        init(&GLOBAL);
         char tk, i;
-        tk = tok();
+        tk = tok(&GLOBAL);
         _print("\t.global main\n");
         _print("\t.section .text\n");
         _print("main:");
@@ -783,17 +786,17 @@ main(c, v) char **v;
         _print("\tmovl %esp, %ebp\n");
 
         for (i = 0; i < 6; ++i)
-                ID[i] = "arg_v"[i];
-        createglobal();
+                GLOBAL.ID[i] = "arg_v"[i];
+        createglobal(&GLOBAL);
         for (i = 0; i < 6; ++i)
-                ID[i] = "arg_c"[i];
-        createglobal();
+                GLOBAL.ID[i] = "arg_c"[i];
+        createglobal(&GLOBAL);
         _print("\tmovl 8(%ebp), %eax\n");
         _print("\tmovl %eax, (arg_c)\n");
         _print("\tmovl 12(%ebp), %eax\n");
         _print("\tmovl %eax, (arg_v)\n");
         while (tk)
-                tk = statement(tk);
+                tk = statement(&GLOBAL, tk);
         if (c == 2 && !cmp(v[1], "/Main"))
                 _print("\tcall Main\n");
         _print(".ext:\n");
@@ -804,18 +807,18 @@ main(c, v) char **v;
         _print("\tpopl %ebx\n");
         _print("\tint $0x80\n");
         _print("\t.section .data\n");
-        for (i = 0; i < global_count; ++i)
+        for (i = 0; i < GLOBAL.global_count; ++i)
         {
-                _print(variables[i]);
+                _print(GLOBAL.variables[i]);
                 _print(":\t.long 0\n");
         }
         _print("\t.section .rodata\n");
-        for (i = 0; i < string_count; ++i)
+        for (i = 0; i < GLOBAL.string_count; ++i)
         {
                 _print("string");
                 _print_number(i);
                 _print(":\n\t.ascii \"");
-                _print(strings[i]);
+                _print(GLOBAL.strings[i]);
                 _print("\"\n");
         }
         return 0;
