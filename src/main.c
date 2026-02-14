@@ -489,7 +489,7 @@ args(tk)
         }
 
         int param_start = global_count;
-        int param_end = variable_count - 1;
+        int param_end = (global_count + variable_count) - 1;
 
         for (i = 0; i < (param_end - param_start + 1) / 2; i++)
         {
@@ -704,6 +704,17 @@ main(c, v) char **v;
         printf("main:");
         printf("\tpushl %%ebp\n");
         printf("\tmovl %%esp, %%ebp\n");
+
+        for (i = 0; i < 31; ++i)
+                ID[i] = "arg_v"[i];
+        createglobal();
+        for (i = 0; i < 31; ++i)
+                ID[i] = "arg_c"[i];
+        createglobal();
+        printf("\tmovl 8(%%ebp), %%eax\n");
+        printf("\tmovl %%eax, (arg_c)\n");
+        printf("\tmovl 12(%%ebp), %%eax\n");
+        printf("\tmovl %%eax, (arg_v)\n");
         while (tk)
                 tk = statement(tk);
         if (c == 2 && !cmp(v[1], "/Main"))

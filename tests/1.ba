@@ -4,4 +4,5 @@ fn foo(a,b){
         return a-b;
 }
 
-foo(3,2);
+printf(foo(3,2), "Difference: %d\n");
+return arg_c;
