@@ -37,6 +37,3 @@ INTERACTIVE SHELL
 
      The special "EOF" keyword signals the end of input and is not
      compiled as part of the program.
-
-OUTPUT
-        the compiler outputs strictly to CPUs that predate MMUs
