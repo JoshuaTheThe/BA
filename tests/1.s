@@ -1,9 +1,13 @@
 	.global main
 	.section .text
-main:	.extern printf
+main:	pushl %ebp
+	movl %esp, %ebp
+	.extern printf
 	jmp foo.aft
 foo:	pushl %ebp
 	movl %esp, %ebp
+	subl $4, %esp
+	subl $4, %esp
 	pushl 12(%ebp)
 	pushl 8(%ebp)
 	popl %ebx
@@ -27,6 +31,8 @@ foo.aft:
 	push %eax
 	popl %eax
 .ext:
+	movl %ebp, %esp
+	popl %ebp
 	pushl %eax
 	movl $0x01, %eax
 	popl %ebx

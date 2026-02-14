@@ -1,7 +1,10 @@
 extern printf;
+
 static k = 10;
-while k
+while (k)
 {
-        printf("Hello, World!\n");
+        printf(k, "Hello, World! %d\n");
         k=k-1;
 }
+
+return 0;

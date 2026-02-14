@@ -28,6 +28,7 @@ createvar()
         ebpoff[variable_count + global_count] = EBPOFF;
         EBPOFF -= 4;
         variable_count++;
+        printf("\tsubl $4, %%esp\n");
 }
 
 createglobal()
@@ -53,6 +54,7 @@ init()
         STDIN = 0;
         STDOUT = 1;
         PUSHBACK = -1;
+        EBPOFF = -4;
 }
 
 getc()
@@ -317,6 +319,7 @@ assignment_typeB(tk, buf) char *buf;
                 printf("\tlea %d(%%ebp), %%ebx\n", ebpoff[i]);
         }
         printf("\tpopl (%%ebx)\n");
+        printf("\tpushl (%%ebx)\n");
         return tk;
 }
 
@@ -547,8 +550,8 @@ statement(tk)
         { /* while */
                 int _cond = label_count++;
                 int _end = label_count++;
-                tk = expr(tok());
                 printf("m%d:\n", _cond);
+                tk = expr(tok());
                 printf("\tpopl %%eax\n");
                 printf("\ttestl %%eax,%%eax\n");
                 printf("\tje m%d\n", _end);
@@ -638,14 +641,12 @@ statement(tk)
         }
         else if (tk == 38)
         {
-                int cnt = 0;
                 do
                 {
                         tk = tok();
                         for (i = 0; i < 31; ++i)
                                 buf[i] = ID[i];
                         createvar();
-                        cnt++;
 
                         tk = tok();
                         if (tk == 18)
@@ -658,8 +659,6 @@ statement(tk)
                                 continue;
                         }
                 } while (tk == 23);
-
-                printf("\tsub $%d, %%esp\n", cnt * 4);
 
                 if (tk != 19)
                 {
@@ -690,11 +689,15 @@ main(c, v) char **v;
         printf("\t.global main\n");
         printf("\t.section .text\n");
         printf("main:");
+        printf("\tpushl %%ebp\n");
+        printf("\tmovl %%esp, %%ebp\n");
         while (tk)
                 tk = statement(tk);
         if (c == 2 && !cmp(v[1], "/Main"))
                 printf("\tcall Main\n");
         printf(".ext:\n");
+        printf("\tmovl %%ebp, %%esp\n");
+        printf("\tpopl %%ebp\n");
         printf("\tpushl %%eax\n");
         printf("\tmovl $0x01, %%eax\n");
         printf("\tpopl %%ebx\n");
