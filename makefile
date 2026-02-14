@@ -15,7 +15,7 @@ override CC_FLAGS := -std=c89 -Os -ffreestanding -nostdlib \
 override LDFLAGS := --build-id=none --gc-sections \
                     -z norelro --no-eh-frame-hdr \
                     --strip-all -s -O2 \
-		    -z max-page-size=0x1000 -z common-page-size=0x1000
+		    -z max-page-size=0x1000 -z common-page-size=0x10
 override STRIP := strip --strip-all \
                   --remove-section=.note* \
                   --remove-section=.comment \
@@ -76,14 +76,10 @@ bin:
 clean:
 	rm -rf obj bin
 
-.PHONY: distclean
-distclean: clean
-	rm -f *~
-
 # Size analysis
 .PHONY: size
-size: bin/$(OUTPUT)
+size:
 	@echo "=== Section sizes ==="
-	@objdump -h bin/$(OUTPUT) | grep -E 'text|data|bss'
+	@objdump -h bin/$(OUTPUT)
 	@echo "=== Total ==="
 	@wc -c < bin/$(OUTPUT) | awk '{print $$1 " bytes"}'
