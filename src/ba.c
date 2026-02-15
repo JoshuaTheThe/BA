@@ -388,7 +388,7 @@ primary(struct _GLOBAL_ *GLOBAL, int tk)
                         _print(buf);
                         _print("\n\taddl $");
                         _print_number(GLOBAL->count * 4);
-                        _print(", %esp\n\tpush %eax\n");
+                        _print(", %esp\n\tpushl %eax\n");
                         if (tk != 6)
                                 _perror("syntax error\n", 14), _exit(1);
                         tk = tok(GLOBAL);
