@@ -42,22 +42,14 @@ _read:
         ret
 
 _perror:
-        pushl   %ebp
+        pushal
         movl    %esp, %ebp
-        pushl   %ebx
-        pushl   %ecx
-        pushl   %edx
-        
         movl    8(%ebp), %ecx
         movl    12(%ebp), %edx
         movl    $2, %ebx
         movl    $4, %eax
         int     $0x80
-        
-        popl    %edx
-        popl    %ecx
-        popl    %ebx
-        popl    %ebp
+        popal
         ret
 
 _print:
