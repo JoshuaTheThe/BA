@@ -354,27 +354,18 @@ assignment_typeB(struct _GLOBAL_ *GLOBAL, int tk, char *buf)
                 _print("(%ebp), %ebx\n");
         }
 
-        // Store with appropriate size
-        _print("\tpop");
+        _print("\tpopl %eax\n");
         if (GLOBAL->OPCODE_SUFFIX[0] == 'b')
-                _print("b");
+                _print("\tmovb");
         else if (GLOBAL->OPCODE_SUFFIX[0] == 'w')
-                _print("w");
-        else
-                _print("l");
-        _print(" (%ebx)\n");
-
-        if (GLOBAL->OPCODE_SUFFIX[0] == 'b')
-                _print("\tmovzbw");
-        else if (GLOBAL->OPCODE_SUFFIX[0] == 'w')
-                _print("\tmovzwl");
+                _print("\tmovw");
         else
                 _print("\tmovl");
-        _print(" (%ebx), %");
+        _print(" %");
         _print(GLOBAL->REG_PREFIX);
-        _print("ax\n\tpushl %");
-        _print(GLOBAL->REG_PREFIX);
-        _print("ax\n");
+        _print("a");
+        _print(GLOBAL->REG_SUFFIX);
+        _print(", (%ebx)\n\tpush %eax\n");
 
         return tk;
 }
@@ -618,14 +609,15 @@ assignment_typeA(struct _GLOBAL_ *GLOBAL, int tk)
         tk = relational(GLOBAL, tk);
         while (tk == 18)
         {
+                const struct _GLOBAL_ TYPE = *GLOBAL;
                 tk = relational(GLOBAL, tok(GLOBAL));
                 _print("\tpopl %ebx\n\tpopl %eax\n");
 
-                if (GLOBAL->OPCODE_SUFFIX[0] == 'b')
+                if (TYPE.OPCODE_SUFFIX[0] == 'b')
                 {
                         _print("\tmovb %bl, (%eax)\n");
                 }
-                else if (GLOBAL->OPCODE_SUFFIX[0] == 'w')
+                else if (TYPE.OPCODE_SUFFIX[0] == 'w')
                 {
                         _print("\tmovw %bx, (%eax)\n");
                 }
@@ -634,11 +626,11 @@ assignment_typeA(struct _GLOBAL_ *GLOBAL, int tk)
                         _print("\tmovl %ebx, (%eax)\n");
                 }
 
-                if (GLOBAL->OPCODE_SUFFIX[0] == 'b')
+                if (TYPE.OPCODE_SUFFIX[0] == 'b')
                 {
                         _print("\tmovzbl (%eax), %eax\n");
                 }
-                else if (GLOBAL->OPCODE_SUFFIX[0] == 'w')
+                else if (TYPE.OPCODE_SUFFIX[0] == 'w')
                 {
                         _print("\tmovzwl (%eax), %eax\n");
                 }
