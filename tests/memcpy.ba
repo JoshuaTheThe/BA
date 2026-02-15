@@ -2,11 +2,10 @@
 extern printf;
 
 fn cpy(a,b,c){
-        while(c){
-                byte (int a) = byte *(int b);
-                a=a+1;
-                b=b+1;
-                c=c-1;
+        auto i=0;
+        while(c-i){
+                byte (int a+i) = byte *(int b+i);
+                i=i+1;
         }
 }
 
