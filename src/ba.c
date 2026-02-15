@@ -451,9 +451,6 @@ primary(struct _GLOBAL_ *GLOBAL, int tk)
 
         if (tk == 5) // parentheses
         {
-                GLOBAL->REG_SUFFIX[0] = 'x';
-                GLOBAL->REG_PREFIX[0] = 'e';
-                GLOBAL->OPCODE_SUFFIX[0] = 'l';
                 tk = expr(GLOBAL, tok(GLOBAL));
                 if (tk != 6)
                         _perror("syntax error\n"), _exit(1);
