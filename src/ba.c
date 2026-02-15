@@ -5,8 +5,8 @@
 #define MAX_N (1024)
 
 extern int _print(const char *);
-extern int _perror(const char *, int);
-extern void _exit(int);
+extern int _perror(const char *);
+extern _Noreturn void _exit(int);
 extern int _read(char *, int);
 
 struct _GLOBAL_
@@ -77,7 +77,7 @@ getvar(struct _GLOBAL_ *GLOBAL, char *buf)
         for (i = 0; i < MAX_N - 1; ++i)
                 if (!cmp(buf, GLOBAL->variables[i]))
                         return i;
-        _perror("not found\n", 11), _exit(1);
+        _perror("not found\n"), _exit(1);
 }
 
 getc(struct _GLOBAL_ *GLOBAL)
@@ -221,9 +221,9 @@ tok(struct _GLOBAL_ *GLOBAL)
         // case '^':
         //         tk = 16;
         //         return tk;
-        // case '&':
-        //         tk = 17;
-        //         return tk;
+        case '&':
+                tk = 17;
+                return tk;
         case '=':
                 tk = 18;
                 return tk;
@@ -272,7 +272,7 @@ tok(struct _GLOBAL_ *GLOBAL)
                                 break;
                         if (chr == -1)
                         {
-                                _perror("Unterminated string", 20);
+                                _perror("Unterminated string");
                                 _exit(1);
                         }
                         if (i < MAX_LENGTH - 1)
@@ -354,11 +354,43 @@ primary(struct _GLOBAL_ *GLOBAL, int tk)
         char buf[32], i;
         for (i = 0; i < MAX_LENGTH - 1; ++i)
                 buf[i] = GLOBAL->ID[i];
+        if (tk == 3)
+        {
+                while (tk == 3)
+                {
+                        tk = primary(GLOBAL, tok(GLOBAL));
+                        _print("\tpopl %eax\n");
+                        _print("\tpushl (%eax)\n");
+                }
+                return tk;
+        }
+        if (tk == 17)
+        {
+                tk = tok(GLOBAL);
+                if (tk != 32)
+                        _perror("syntax error\n"), _exit(1);
+                i = getvar(GLOBAL, GLOBAL->ID);
+                if (i < GLOBAL->global_count)
+                {
+                        _print("\tlea (");
+                        _print(GLOBAL->ID);
+                        _print("), %eax\n");
+                }
+                else
+                {
+                        _print("\tlea ");
+                        _print_number(GLOBAL->ebpoff[i]);
+                        _print("(%ebp), %eax\n");
+                }
+
+                _print("\tpushl %eax\n");
+                return tok(GLOBAL);
+        }
         if (tk == 5)
         {
                 tk = expr(GLOBAL, tok(GLOBAL));
                 if (tk != 6)
-                        _perror("syntax error\n", 14), _exit(1);
+                        _perror("syntax error\n"), _exit(1);
                 return tok(GLOBAL);
         }
         if (tk == 25)
@@ -390,7 +422,7 @@ primary(struct _GLOBAL_ *GLOBAL, int tk)
                         _print_number(GLOBAL->count * 4);
                         _print(", %esp\n\tpushl %eax\n");
                         if (tk != 6)
-                                _perror("syntax error\n", 14), _exit(1);
+                                _perror("syntax error\n"), _exit(1);
                         tk = tok(GLOBAL);
                 }
                 else
@@ -548,14 +580,14 @@ statement(struct _GLOBAL_ *GLOBAL, int tk)
                         }
                         else
                         {
-                                _perror("syntax error\n", 14);
+                                _perror("syntax error\n");
                                 _exit(1);
                         }
                         tk = tok(GLOBAL);
                 } while (tk == 23);
                 if (tk != 19)
                 {
-                        _perror("syntax error\n", 14);
+                        _perror("syntax error\n");
                         _exit(1);
                 }
                 return tok(GLOBAL);
@@ -578,7 +610,7 @@ statement(struct _GLOBAL_ *GLOBAL, int tk)
                 }
                 else
                 {
-                        _perror("syntax error\n", 14), _exit(1);
+                        _perror("syntax error\n"), _exit(1);
                 }
                 return tok(GLOBAL);
         }
@@ -640,7 +672,7 @@ statement(struct _GLOBAL_ *GLOBAL, int tk)
                         tk = expr(GLOBAL, tk);
                         if (tk != 19)
                         {
-                                _perror("Expected ; after return expression", 35);
+                                _perror("Expected ; after return expression");
                                 _exit(1);
                         }
                         _print("\tpopl %eax\n\tjmp ");
@@ -660,7 +692,7 @@ statement(struct _GLOBAL_ *GLOBAL, int tk)
                 }
                 else
                 {
-                        _perror("syntax error\n", 14), _exit(1);
+                        _perror("syntax error\n"), _exit(1);
                 }
                 return tok(GLOBAL);
         }
@@ -701,7 +733,7 @@ statement(struct _GLOBAL_ *GLOBAL, int tk)
 
                 if (tk != 19)
                 {
-                        _perror("syntax error\n", 14);
+                        _perror("syntax error\n");
                         _exit(1);
                 }
                 return tok(GLOBAL);
@@ -724,7 +756,7 @@ statement(struct _GLOBAL_ *GLOBAL, int tk)
 
                 if (tk != 19)
                 {
-                        _perror("syntax error\n", 14);
+                        _perror("syntax error\n");
                         _exit(1);
                 }
                 return tok(GLOBAL);
@@ -734,7 +766,7 @@ statement(struct _GLOBAL_ *GLOBAL, int tk)
                 tk = expr(GLOBAL, tk);
                 if (tk != 19)
                 {
-                        _perror("syntax error\n", 14);
+                        _perror("syntax error\n");
                         _exit(1);
                 }
                 _print("\tpopl %eax\n");
