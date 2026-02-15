@@ -6,3 +6,6 @@ FINAL* SIZE IS 5132 BYTES<br>
 use sstrip to strip to final size<br>
 
 only works in i386 32 bit mode<br>
+
+to build normally, just use
+cc src/ba.c src/crt.S -m32 -o bin/ba

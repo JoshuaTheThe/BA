@@ -1,6 +1,6 @@
 /* ba.ld - Minimal ELF header */
 OUTPUT_FORMAT(elf32-i386)
-ENTRY(_start)
+ENTRY(_pre_main)
 
 PHDRS
 {

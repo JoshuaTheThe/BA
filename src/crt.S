@@ -1,12 +1,12 @@
         .section .text
         .global _exit
-        .global _start
+        .global _pre_main
         .global _read
         .global _fd_print
         .global _print
         .global _perror
         .extern main
-_start:
+_pre_main:
         popl    %ecx
         movl    %esp, %edx
         pushl   %edx
