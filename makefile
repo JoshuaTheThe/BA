@@ -33,10 +33,34 @@ override AS_SRC := src/crt.S
 override OBJ := $(addprefix obj/,$(notdir $(C_SRC:.c=.o))) \
                 $(addprefix obj/,$(notdir $(AS_SRC:.S=.o)))
 
+# Default target
 .PHONY: all
 all: bin/$(OUTPUT)
-	@SIZE=$$(wc -c < bin/$(OUTPUT)); \
-	echo "BA compiler: $$SIZE bytes"; \
+
+# Target-specific variables for Windows
+.PHONY: windows
+windows: OUTPUT := ba-windows
+windows: CC_FLAGS += -DTARGET_WINDOWS
+windows: bin/ba-windows
+
+# Target-specific variables for DekOS
+.PHONY: dekos
+dekos: OUTPUT := ba-dekos
+dekos: CC_FLAGS += -DTARGET_DEKOS
+dekos: bin/ba-dekos
+
+# Pattern rule for both targets
+bin/ba-windows bin/ba-dekos bin/ba: $(OBJ) | bin
+	$(LD) -T ba.ld $(OBJ) -o $@.tmp $(LDFLAGS)
+	# Merge text and data into one segment
+	objcopy --merge-notes --remove-section=.comment \
+	        --remove-section=.note --remove-section=.note.gnu.build-id \
+	        $@.tmp $@
+	$(STRIP) $@
+	chmod +x $@
+	rm -f $@.tmp
+	@SIZE=$$(wc -c < $@); \
+	echo "BA compiler ($@): $$SIZE bytes"; \
 	if [ $$SIZE -le 8192 ]; then \
 		echo "✓ Under 8KB! (insane)"; \
 	elif [ $$SIZE -le 10240 ]; then \
@@ -46,17 +70,6 @@ all: bin/$(OUTPUT)
 	else \
 		echo "✗ $$(($$SIZE - 12288)) bytes over 12KB"; \
 	fi
-
-# Merge all sections into one to save space
-bin/$(OUTPUT): $(OBJ) | bin
-	$(LD) -T ba.ld $(OBJ) -o $@.tmp $(LDFLAGS)
-	# Merge text and data into one segment
-	objcopy --merge-notes --remove-section=.comment \
-	        --remove-section=.note --remove-section=.note.gnu.build-id \
-	        $@.tmp $@
-	$(STRIP) $@
-	chmod +x $@
-	rm -f $@.tmp
 
 # Compile with -ffreestanding to avoid builtins
 obj/%.o: src/%.c | obj
@@ -83,3 +96,7 @@ size:
 	@objdump -h bin/$(OUTPUT)
 	@echo "=== Total ==="
 	@wc -c < bin/$(OUTPUT) | awk '{print $$1 " bytes"}'
+
+# Build both targets
+.PHONY: all-targets
+all-targets: windows dekos
