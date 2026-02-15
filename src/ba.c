@@ -1046,7 +1046,11 @@ char **v;
                 tk = statement(&GLOBAL, tk);
         if (c == 2 && !cmp(v[1], "/Main"))
                 _print("\tcall Main\n");
+#ifndef TARGET_DEKOS
         _print(".ext:\n\tmovl %ebp, %esp\n\tpopl %ebp\n\tpushl %eax\n\tmovl $0x01, %eax\n\tpopl %ebx\n\tint $0x80\n\t.section .data\n");
+#else
+        _print(".ext:\n\tmovl %ebp, %esp\n\tpopl %ebp\n\tpushl %eax\n\tmovl $0x00, %eax\n\tpopl %ebx\n\tint $0x80\n\t.section .data\n");
+#endif
         for (i = 0; i < GLOBAL.global_count; ++i)
         {
                 _print(GLOBAL.variables[i]);
