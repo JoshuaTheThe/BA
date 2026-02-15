@@ -653,9 +653,6 @@ assignment_typeA(struct _GLOBAL_ *GLOBAL, int tk)
 
 expr(struct _GLOBAL_ *GLOBAL, int tk)
 {
-        GLOBAL->REG_PREFIX[0] = 'e';
-        GLOBAL->REG_SUFFIX[0] = 'x';
-        GLOBAL->OPCODE_SUFFIX[0] = 'l';
         GLOBAL->count = 1;
         tk = assignment_typeA(GLOBAL, tk);
         while (tk == 23)
