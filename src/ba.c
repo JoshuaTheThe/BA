@@ -447,9 +447,10 @@ additive(struct _GLOBAL_ *GLOBAL, int tk)
                 tk = multiplicative(GLOBAL, tok(GLOBAL));
                 _print("\tpopl %ebx\n\tpopl %eax\n");
                 if (_ == 1)
-                        _print("\taddl %ebx, %eax\n");
+                        _print("\taddl ");
                 else
-                        _print("\tsubl %ebx, %eax\n");
+                        _print("\tsubl ");
+                _print("%ebx, %eax\n");
                 _print("\tpushl %eax\n");
         }
         return tk;
