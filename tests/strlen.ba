@@ -1,0 +1,11 @@
+
+fn strlen(s){
+        auto i=0;
+        while (*(s+i) & 255){
+                i=i+1;
+        }
+
+        return i;
+}
+
+return strlen("Hello");

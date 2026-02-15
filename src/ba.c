@@ -468,15 +468,17 @@ multiplicative(struct _GLOBAL_ *GLOBAL, int tk)
 additive(struct _GLOBAL_ *GLOBAL, int tk)
 {
         tk = multiplicative(GLOBAL, tk);
-        while (tk == 1 || tk == 2)
+        while (tk == 1 || tk == 2 || tk == 17)
         {
                 int _ = tk;
                 tk = multiplicative(GLOBAL, tok(GLOBAL));
                 _print("\tpopl %ebx\n\tpopl %eax\n");
                 if (_ == 1)
                         _print("\taddl ");
-                else
+                else if (_ == 2)
                         _print("\tsubl ");
+                else
+                        _print("\tandl ");
                 _print("%ebx, %eax\n");
                 _print("\tpushl %eax\n");
         }
