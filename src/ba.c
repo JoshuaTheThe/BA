@@ -951,7 +951,7 @@ statement(struct _GLOBAL_ *GLOBAL, int tk)
         return tk;
 }
 
-#ifdef _WIN32
+#ifdef TARGET_WINDOWS
 _Noreturn int main(int c, char **v)
 {
         struct _GLOBAL_ GLOBAL;
