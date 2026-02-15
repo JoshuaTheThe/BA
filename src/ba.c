@@ -773,7 +773,7 @@ _Noreturn int main(c, v) char **v;
                 _print_number(i);
                 _print(":\n\t.ascii \"");
                 _print(&GLOBAL.strings[i * 32]);
-                _print("\0\"\n");
+                _print("\\0\"\n");
         }
         _exit(0);
 }

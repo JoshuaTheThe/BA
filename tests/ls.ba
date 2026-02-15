@@ -17,7 +17,7 @@ fn foo()
         }
 
         while (fgets(pipe, 128, path))
-                printf(path, "%s\n");
+                printf(path, "%s");
 
         pclose(pipe);
         free(path);
