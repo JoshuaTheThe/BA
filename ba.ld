@@ -15,7 +15,7 @@ SECTIONS
         *(.text*)
         *(.rodata*)
         *(.data*)
-        . = ALIGN(16);
+        . = ALIGN(1);
     } :text
     
     /DISCARD/ : {
