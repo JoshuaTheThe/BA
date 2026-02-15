@@ -1,0 +1,9 @@
+static a;
+
+fn ptest(p){
+        (p) = *p + 1;
+}
+
+a = 0;
+ptest(&a);
+return a;
