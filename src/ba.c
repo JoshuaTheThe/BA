@@ -519,7 +519,7 @@ primary(struct _GLOBAL_ *GLOBAL, int tk)
                 {
                         tk = expr(GLOBAL, tok(GLOBAL));
                         _print("\tcall ");
-#ifdef _WIN32
+#ifdef TARGET_WINDOWS
                         _print("_");
 #endif
                         _print(buf);
@@ -735,7 +735,7 @@ statement(struct _GLOBAL_ *GLOBAL, int tk)
                         if (tk == 32)
                         {
                                 _print("\t.extern ");
-#ifdef _WIN32
+#ifdef TARGET_WINDOWS
                                 _print("_");
 #endif
                                 _print(GLOBAL->ID);
@@ -866,12 +866,12 @@ statement(struct _GLOBAL_ *GLOBAL, int tk)
                 for (i = 0; i < MAX_LENGTH - 1; ++i)
                         GLOBAL->function[i] = buf[i] = GLOBAL->ID[i];
                 _print("\tjmp ");
-#ifdef _WIN32
+#ifdef TARGET_WINDOWS
                 _print("_");
 #endif
                 _print(GLOBAL->ID);
                 _print(".aft\n");
-#ifdef _WIN32
+#ifdef TARGET_WINDOWS
                 _print("_");
 #endif
                 _print(GLOBAL->ID);
@@ -879,12 +879,12 @@ statement(struct _GLOBAL_ *GLOBAL, int tk)
                 tk = args(GLOBAL, tok(GLOBAL));
                 GLOBAL->EBPOFF = -4;
                 tk = statement(GLOBAL, tk);
-#ifdef _WIN32
+#ifdef TARGET_WINDOWS
                 _print("_");
 #endif
                 _print(buf);
                 _print(".ext:\n\tmovl %ebp, %esp\n\tpopl %ebp\n\tret\n");
-#ifdef _WIN32
+#ifdef TARGET_WINDOWS
                 _print("_");
 #endif
                 _print(buf);
