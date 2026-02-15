@@ -11,14 +11,21 @@ extern int _read(int, char *, int);
 
 struct _GLOBAL_
 {
-        char strings[MAX_LENGTH*MAX_N];
+        char strings[MAX_N*MAX_LENGTH];
         char variables[MAX_N][MAX_LENGTH];
         int ebpoff[MAX_N];
-        char ID[MAX_LENGTH],function[MAX_LENGTH];
-        int NUMBER, PUSHBACK, EBPOFF, string_count, label_count, variable_count, global_count;
+        char ID[MAX_LENGTH];
+        char function[MAX_LENGTH];
+        int NUMBER;
+        int EBPOFF;
+        int string_count;
+        int label_count;
+        int variable_count;
+        int global_count;
+        char PUSHBACK;
 };
 
-extern expr(struct _GLOBAL_ *,int);
+extern expr(struct _GLOBAL_ *, int);
 
 _print_number(unsigned int n)
 {
@@ -37,7 +44,7 @@ _print_number(unsigned int n)
         _print(buf + i);
 }
 
-createstr(struct _GLOBAL_ *GLOBAL)
+static inline createstr(struct _GLOBAL_ *GLOBAL)
 {
         char i;
         for (i = 0; i < MAX_LENGTH - 1; ++i)
@@ -86,7 +93,7 @@ getc(struct _GLOBAL_ *GLOBAL)
         return chr;
 }
 
-ungetc(struct _GLOBAL_ *GLOBAL, int c)
+static inline ungetc(struct _GLOBAL_ *GLOBAL, int c)
 {
         GLOBAL->PUSHBACK = c;
 }
@@ -100,7 +107,7 @@ cmp(a, b) char *a, *b;
         return *a - *b;
 }
 
-checkkeyword(struct _GLOBAL_ *GLOBAL, int tk)
+static inline checkkeyword(struct _GLOBAL_ *GLOBAL, int tk)
 {
         if (tk != 32)
                 return tk;
@@ -189,33 +196,33 @@ tok(struct _GLOBAL_ *GLOBAL)
         case '}':
                 tk = 8;
                 return tk;
-        //case '[':
-        //        tk = 9;
-        //        return tk;
-        //case ']':
-        //        tk = 10;
-        //        return tk;
-        //case '!':
-        //        tk = 11;
-        //        return tk;
-        //case '@':
-        //        tk = 12;
-        //        return tk;
-        //case '#':
-        //        tk = 13;
-        //        return tk;
-        //case '$':
-        //        tk = 14;
-        //        return tk;
+        // case '[':
+        //         tk = 9;
+        //         return tk;
+        // case ']':
+        //         tk = 10;
+        //         return tk;
+        // case '!':
+        //         tk = 11;
+        //         return tk;
+        // case '@':
+        //         tk = 12;
+        //         return tk;
+        // case '#':
+        //         tk = 13;
+        //         return tk;
+        // case '$':
+        //         tk = 14;
+        //         return tk;
         case '%':
                 tk = 15;
                 return tk;
-        //case '^':
-        //        tk = 16;
-        //        return tk;
-        //case '&':
-        //        tk = 17;
-        //        return tk;
+        // case '^':
+        //         tk = 16;
+        //         return tk;
+        // case '&':
+        //         tk = 17;
+        //         return tk;
         case '=':
                 tk = 18;
                 return tk;
@@ -237,24 +244,24 @@ tok(struct _GLOBAL_ *GLOBAL)
         case '.':
                 tk = 24;
                 return tk;
-        //case '\'':
-        //        tk = 26;
-        //        return tk;
-        //case '\\':
-        //        tk = 27;
-        //        return tk;
-        //case '|':
-        //        tk = 28;
-        //        return tk;
-        //case '?':
-        //        tk = 29;
-        //        return tk;
-        //case '`':
-        //        tk = 30;
-        //        return tk;
-        //case '~':
-        //        tk = MAX_LENGTH - 1;
-        //        return tk;
+        // case '\'':
+        //         tk = 26;
+        //         return tk;
+        // case '\\':
+        //         tk = 27;
+        //         return tk;
+        // case '|':
+        //         tk = 28;
+        //         return tk;
+        // case '?':
+        //         tk = 29;
+        //         return tk;
+        // case '`':
+        //         tk = 30;
+        //         return tk;
+        // case '~':
+        //         tk = MAX_LENGTH - 1;
+        //         return tk;
         case '"':
                 i = 0;
                 while (1)
@@ -293,7 +300,7 @@ tok(struct _GLOBAL_ *GLOBAL)
 
         if (tk)
         {
-                ungetc(GLOBAL,chr);
+                ungetc(GLOBAL, chr);
                 return tk;
         }
 
@@ -323,7 +330,7 @@ tok(struct _GLOBAL_ *GLOBAL)
 assignment_typeB(struct _GLOBAL_ *GLOBAL, int tk, char *buf)
 {
         char i;
-        tk = expr(GLOBAL,tk);
+        tk = expr(GLOBAL, tk);
         i = getvar(GLOBAL, buf);
         if (i < GLOBAL->global_count)
         {
@@ -348,7 +355,7 @@ primary(struct _GLOBAL_ *GLOBAL, int tk)
                 buf[i] = GLOBAL->ID[i];
         if (tk == 5)
         {
-                tk = expr(GLOBAL,tok(GLOBAL));
+                tk = expr(GLOBAL, tok(GLOBAL));
                 if (tk != 6)
                         _perror("syntax error\n", 14), _exit(1);
                 return tok(GLOBAL);
@@ -376,7 +383,7 @@ primary(struct _GLOBAL_ *GLOBAL, int tk)
                 else if (tk == 5)
                 {
                         _print("\tpushl %esi\n\tmovl %esp,%esi\n");
-                        tk = expr(GLOBAL,tok(GLOBAL));
+                        tk = expr(GLOBAL, tok(GLOBAL));
                         _print("\tcall ");
                         _print(buf);
                         _print("\n\tmovl %esi,%esp\n\tpopl %esi\n\tpush %eax\n");
@@ -576,7 +583,7 @@ statement(struct _GLOBAL_ *GLOBAL, int tk)
                 int _then = GLOBAL->label_count++;
                 int _else = GLOBAL->label_count++;
                 int _end = GLOBAL->label_count++;
-                tk = expr(GLOBAL,tok(GLOBAL));
+                tk = expr(GLOBAL, tok(GLOBAL));
                 _print("\tpopl %eax\n\ttestl %eax,%eax\n\tje m");
                 _print_number(_else);
                 _print("\nm");
@@ -601,7 +608,7 @@ statement(struct _GLOBAL_ *GLOBAL, int tk)
                 _print("m");
                 _print_number(_cond);
                 _print(":\n");
-                tk = expr(GLOBAL,tok(GLOBAL));
+                tk = expr(GLOBAL, tok(GLOBAL));
                 _print("\tpopl %eax\n\ttestl %eax,%eax\n\tje m");
                 _print_number(_end);
                 _print("\n");
@@ -626,7 +633,7 @@ statement(struct _GLOBAL_ *GLOBAL, int tk)
                 }
                 else
                 {
-                        tk = expr(GLOBAL,tk);
+                        tk = expr(GLOBAL, tk);
                         if (tk != 19)
                         {
                                 _perror("Expected ; after return expression", 35);
