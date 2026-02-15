@@ -425,14 +425,10 @@ multiplicative(struct _GLOBAL_ *GLOBAL, int tk)
                 _print("\tpopl %ebx\n\tpopl %eax\n");
                 if (_ == 3)
                         _print("\timul %ebx\n");
-                else if (_ == 4)
-                {
+                else
                         _print("\tcdq\n\tidiv %ebx\n");
-                }
-                else if (_ == 15)
-                {
-                        _print("\tcdq\n\tidiv %ebx\n\tmovl %edx, %eax\n");
-                }
+                if (_ == 15)
+                        _print("\tmovl %edx, %eax\n");
                 _print("\tpushl %eax\n");
         }
         return tk;
