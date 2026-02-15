@@ -11,7 +11,7 @@ extern int _read(int, char *, int);
 
 struct _GLOBAL_
 {
-        char strings[MAX_N*MAX_LENGTH];
+        char strings[MAX_N * MAX_LENGTH];
         char variables[MAX_N][MAX_LENGTH];
         int ebpoff[MAX_N];
         char ID[MAX_LENGTH];
