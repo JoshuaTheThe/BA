@@ -218,9 +218,9 @@ tok(struct _GLOBAL_ *GLOBAL)
         case '%':
                 tk = 15;
                 return tk;
-        // case '^':
-        //         tk = 16;
-        //         return tk;
+        case '^':
+                tk = 16;
+                return tk;
         case '&':
                 tk = 17;
                 return tk;
@@ -251,9 +251,9 @@ tok(struct _GLOBAL_ *GLOBAL)
         // case '\\':
         //         tk = 27;
         //         return tk;
-        // case '|':
-        //         tk = 28;
-        //         return tk;
+        case '|':
+                tk = 28;
+                return tk;
         // case '?':
         //         tk = 29;
         //         return tk;
@@ -261,7 +261,7 @@ tok(struct _GLOBAL_ *GLOBAL)
         //         tk = 30;
         //         return tk;
         // case '~':
-        //         tk = MAX_LENGTH - 1;
+        //         tk = 31;
         //         return tk;
         case '"':
                 i = 0;
@@ -468,7 +468,7 @@ multiplicative(struct _GLOBAL_ *GLOBAL, int tk)
 additive(struct _GLOBAL_ *GLOBAL, int tk)
 {
         tk = multiplicative(GLOBAL, tk);
-        while (tk == 1 || tk == 2 || tk == 17)
+        while (tk == 1 || tk == 2 || tk == 17 || tk == 16 || tk == 28)
         {
                 int _ = tk;
                 tk = multiplicative(GLOBAL, tok(GLOBAL));
@@ -477,8 +477,12 @@ additive(struct _GLOBAL_ *GLOBAL, int tk)
                         _print("\taddl ");
                 else if (_ == 2)
                         _print("\tsubl ");
-                else
+                else if (_ == 17)
                         _print("\tandl ");
+                else if (_ == 16)
+                        _print("\txorl ");
+                else if (_ == 28)
+                        _print("\torl ");
                 _print("%ebx, %eax\n");
                 _print("\tpushl %eax\n");
         }
