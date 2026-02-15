@@ -33,24 +33,34 @@ override AS_SRC := src/crt.S
 override OBJ := $(addprefix obj/,$(notdir $(C_SRC:.c=.o))) \
                 $(addprefix obj/,$(notdir $(AS_SRC:.S=.o)))
 
-# Default target
+# Default target (Linux)
 .PHONY: all
-all: bin/$(OUTPUT)
+all: linux
 
-# Target-specific variables for Windows
+# Linux target (no defines)
+.PHONY: linux
+linux: OUTPUT := ba
+linux: CC_FLAGS := $(CC_FLAGS)
+linux: bin/ba
+
+# Windows target
 .PHONY: windows
 windows: OUTPUT := ba-windows
-windows: CC_FLAGS += -DTARGET_WINDOWS
+windows: CC_FLAGS := $(CC_FLAGS) -DTARGET_WINDOWS
 windows: bin/ba-windows
 
-# Target-specific variables for DekOS
+# DekOS target
 .PHONY: dekos
 dekos: OUTPUT := ba-dekos
-dekos: CC_FLAGS += -DTARGET_DEKOS
+dekos: CC_FLAGS := $(CC_FLAGS) -DTARGET_DEKOS
 dekos: bin/ba-dekos
 
-# Pattern rule for both targets
-bin/ba-windows bin/ba-dekos bin/ba: $(OBJ) | bin
+# Build all three
+.PHONY: all-targets
+all-targets: linux windows dekos
+
+# Pattern rule for all targets
+bin/ba bin/ba-windows bin/ba-dekos: $(OBJ) | bin
 	$(LD) -T ba.ld $(OBJ) -o $@.tmp $(LDFLAGS)
 	# Merge text and data into one segment
 	objcopy --merge-notes --remove-section=.comment \
@@ -71,10 +81,11 @@ bin/ba-windows bin/ba-dekos bin/ba: $(OBJ) | bin
 		echo "✗ $$(($$SIZE - 12288)) bytes over 12KB"; \
 	fi
 
-# Compile with -ffreestanding to avoid builtins
+# Compile C files
 obj/%.o: src/%.c | obj
 	$(CC) $(CC_FLAGS) -ffreestanding -c $< -o $@
 
+# Compile assembly files
 obj/%.o: src/%.S | obj
 	$(CC) $(CC_FLAGS) -c $< -o $@
 
@@ -96,7 +107,3 @@ size:
 	@objdump -h bin/$(OUTPUT)
 	@echo "=== Total ==="
 	@wc -c < bin/$(OUTPUT) | awk '{print $$1 " bytes"}'
-
-# Build both targets
-.PHONY: all-targets
-all-targets: windows dekos
