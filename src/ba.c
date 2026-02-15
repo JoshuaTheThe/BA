@@ -2,7 +2,7 @@
 #pragma pack(1)
 
 #define MAX_LENGTH (32)
-#define MAX_N (256)
+#define MAX_N (1024)
 
 extern int _print(const char *);
 extern int _perror(const char *, int);
