@@ -11,3 +11,5 @@ fn cpy(a,b,c){
 
 auto a,b=4;
 cpy(&a,&b,4);
+
+printf(a, "%d\n");
