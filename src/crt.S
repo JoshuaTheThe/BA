@@ -12,9 +12,6 @@ _start:
         pushl   %edx
         pushl   %ecx
         call    main
-        movl    %eax, %ebx
-        movl    $1, %eax
-        int     $0x80
 _exit:
         pushl   %ebp
         movl    %esp, %ebp

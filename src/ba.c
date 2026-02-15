@@ -740,7 +740,7 @@ statement(struct _GLOBAL_ *GLOBAL, int tk)
         return tk;
 }
 
-main(c, v) char **v;
+_Noreturn int main(c, v) char **v;
 {
         struct _GLOBAL_ GLOBAL;
         GLOBAL.label_count = GLOBAL.string_count = GLOBAL.global_count = GLOBAL.variable_count = 0;
@@ -771,5 +771,5 @@ main(c, v) char **v;
                 _print(&GLOBAL.strings[i * 32]);
                 _print("\"\n");
         }
-        return 0;
+        _exit(0);
 }
