@@ -1,7 +1,7 @@
 
 fn strlen(s){
         auto i=0;
-        while (byte *(s+i)){
+        while (byte *(int s+i)){
                 i=i+1;
         }
 

@@ -3,7 +3,7 @@ extern printf;
 
 fn cpy(a,b,c){
         while(c){
-                byte (a) = byte (*b);
+                byte (int a) = byte *(int b);
                 a=a+1;
                 b=b+1;
                 c=c-1;

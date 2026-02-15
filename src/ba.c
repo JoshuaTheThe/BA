@@ -160,6 +160,10 @@ static inline checkkeyword(struct _GLOBAL_ *GLOBAL, int tk)
         {
                 return 45;
         }
+        if (!cmp(GLOBAL->ID, "int"))
+        {
+                return 46;
+        }
         if (!cmp(GLOBAL->ID, "EOF"))
         {
                 return 0;
@@ -392,6 +396,17 @@ primary(struct _GLOBAL_ *GLOBAL, int tk)
                 GLOBAL->REG_SUFFIX[0] = 'l';
                 GLOBAL->REG_PREFIX[0] = '\0';
                 GLOBAL->OPCODE_SUFFIX[0] = 'b';
+                tk = primary(GLOBAL, tok(GLOBAL));
+                GLOBAL->REG_SUFFIX[0] = 'x';
+                GLOBAL->REG_PREFIX[0] = 'e';
+                GLOBAL->OPCODE_SUFFIX[0] = 'l';
+                return tk;
+        }
+        if (tk == 46) // int
+        {
+                GLOBAL->REG_SUFFIX[0] = 'x';
+                GLOBAL->REG_PREFIX[0] = 'e';
+                GLOBAL->OPCODE_SUFFIX[0] = 'l';
                 tk = primary(GLOBAL, tok(GLOBAL));
                 GLOBAL->REG_SUFFIX[0] = 'x';
                 GLOBAL->REG_PREFIX[0] = 'e';
