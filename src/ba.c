@@ -23,7 +23,7 @@ struct _GLOBAL_
         int variable_count;
         int global_count;
         int count;
-        char PUSHBACK,REG_PREFIX[2],REG_SUFFIX[2],OPCODE_SUFFIX[2];
+        char PUSHBACK, REG_PREFIX[2], REG_SUFFIX[2], OPCODE_SUFFIX[2];
 };
 
 extern expr(struct _GLOBAL_ *, int);
@@ -353,7 +353,29 @@ assignment_typeB(struct _GLOBAL_ *GLOBAL, int tk, char *buf)
                 _print_number(GLOBAL->ebpoff[i]);
                 _print("(%ebp), %ebx\n");
         }
-        _print("\tpopl (%ebx)\n\tpushl (%ebx)\n");
+
+        // Store with appropriate size
+        _print("\tpop");
+        if (GLOBAL->OPCODE_SUFFIX[0] == 'b')
+                _print("b");
+        else if (GLOBAL->OPCODE_SUFFIX[0] == 'w')
+                _print("w");
+        else
+                _print("l");
+        _print(" (%ebx)\n");
+
+        if (GLOBAL->OPCODE_SUFFIX[0] == 'b')
+                _print("\tmovzbw");
+        else if (GLOBAL->OPCODE_SUFFIX[0] == 'w')
+                _print("\tmovzwl");
+        else
+                _print("\tmovl");
+        _print(" (%ebx), %");
+        _print(GLOBAL->REG_PREFIX);
+        _print("ax\n\tpushl %");
+        _print(GLOBAL->REG_PREFIX);
+        _print("ax\n");
+
         return tk;
 }
 
@@ -362,17 +384,57 @@ primary(struct _GLOBAL_ *GLOBAL, int tk)
         char buf[32], i;
         for (i = 0; i < MAX_LENGTH - 1; ++i)
                 buf[i] = GLOBAL->ID[i];
-        if (tk == 3)
+
+        if (tk == 44) // short
+        {
+                GLOBAL->REG_SUFFIX[0] = 'x';
+                GLOBAL->REG_PREFIX[0] = '\0';
+                GLOBAL->OPCODE_SUFFIX[0] = 'w';
+                tk = primary(GLOBAL, tok(GLOBAL));
+                GLOBAL->REG_SUFFIX[0] = 'x';
+                GLOBAL->REG_PREFIX[0] = 'e';
+                GLOBAL->OPCODE_SUFFIX[0] = 'l';
+                return tk;
+        }
+        if (tk == 45) // byte
+        {
+                GLOBAL->REG_SUFFIX[0] = 'l';
+                GLOBAL->REG_PREFIX[0] = '\0';
+                GLOBAL->OPCODE_SUFFIX[0] = 'b';
+                tk = primary(GLOBAL, tok(GLOBAL));
+                GLOBAL->REG_SUFFIX[0] = 'x';
+                GLOBAL->REG_PREFIX[0] = 'e';
+                GLOBAL->OPCODE_SUFFIX[0] = 'l';
+                return tk;
+        }
+
+        if (tk == 3) // dereference *
         {
                 while (tk == 3)
                 {
                         tk = primary(GLOBAL, tok(GLOBAL));
                         _print("\tpopl %eax\n");
-                        _print("\tpushl (%eax)\n");
+
+                        // Load with appropriate size and zero-extend
+                        if (GLOBAL->OPCODE_SUFFIX[0] == 'b')
+                        {
+                                _print("\tmovzbl (%eax), %eax\n");
+                        }
+                        else if (GLOBAL->OPCODE_SUFFIX[0] == 'w')
+                        {
+                                _print("\tmovzwl (%eax), %eax\n");
+                        }
+                        else
+                        {
+                                _print("\tmovl (%eax), %eax\n");
+                        }
+
+                        _print("\tpushl %eax\n");
                 }
                 return tk;
         }
-        if (tk == 17)
+
+        if (tk == 17) // address-of &
         {
                 tk = tok(GLOBAL);
                 if (tk != 32)
@@ -394,14 +456,16 @@ primary(struct _GLOBAL_ *GLOBAL, int tk)
                 _print("\tpushl %eax\n");
                 return tok(GLOBAL);
         }
-        if (tk == 5)
+
+        if (tk == 5) // parentheses
         {
                 tk = expr(GLOBAL, tok(GLOBAL));
                 if (tk != 6)
                         _perror("syntax error\n"), _exit(1);
                 return tok(GLOBAL);
         }
-        if (tk == 25)
+
+        if (tk == 25) // string literal
         {
                 _print("\tlea (string");
                 _print_number(GLOBAL->string_count);
@@ -409,19 +473,21 @@ primary(struct _GLOBAL_ *GLOBAL, int tk)
                 createstr(GLOBAL);
                 return tok(GLOBAL);
         }
-        if (tk == 33)
+
+        if (tk == 33) // number
         {
                 _print("\tpushl $");
                 _print(GLOBAL->ID);
                 _print("\n");
                 return tok(GLOBAL);
         }
-        if (tk == 32)
+
+        if (tk == 32) // identifier
         {
                 tk = tok(GLOBAL);
-                if (tk == 18)
+                if (tk == 18) // assignment
                         return assignment_typeB(GLOBAL, tok(GLOBAL), buf);
-                else if (tk == 5)
+                else if (tk == 5) // function call
                 {
                         tk = expr(GLOBAL, tok(GLOBAL));
                         _print("\tcall ");
@@ -433,20 +499,53 @@ primary(struct _GLOBAL_ *GLOBAL, int tk)
                                 _perror("syntax error\n"), _exit(1);
                         tk = tok(GLOBAL);
                 }
-                else
+                else // variable access
                 {
                         i = getvar(GLOBAL, buf);
-                        if (i < GLOBAL->global_count)
+                        if (i < GLOBAL->global_count) // global
                         {
-                                _print("\tpushl (");
-                                _print(buf);
-                                _print(")\n");
+                                // Load with appropriate size and zero-extend
+                                if (GLOBAL->OPCODE_SUFFIX[0] == 'b')
+                                {
+                                        _print("\tmovzbl (");
+                                        _print(buf);
+                                        _print("), %eax\n");
+                                }
+                                else if (GLOBAL->OPCODE_SUFFIX[0] == 'w')
+                                {
+                                        _print("\tmovzwl (");
+                                        _print(buf);
+                                        _print("), %eax\n");
+                                }
+                                else
+                                {
+                                        _print("\tmovl (");
+                                        _print(buf);
+                                        _print("), %eax\n");
+                                }
+                                _print("\tpushl %eax\n");
                         }
                         else
                         {
-                                _print("\tpushl ");
-                                _print_number(GLOBAL->ebpoff[i]);
-                                _print("(%ebp)\n");
+                                if (GLOBAL->OPCODE_SUFFIX[0] == 'b')
+                                {
+                                        _print("\tmovzbl ");
+                                        _print_number(GLOBAL->ebpoff[i]);
+                                        _print("(%ebp), %eax\n");
+                                }
+                                else if (GLOBAL->OPCODE_SUFFIX[0] == 'w')
+                                {
+                                        _print("\tmovzwl ");
+                                        _print_number(GLOBAL->ebpoff[i]);
+                                        _print("(%ebp), %eax\n");
+                                }
+                                else
+                                {
+                                        _print("\tmovl ");
+                                        _print_number(GLOBAL->ebpoff[i]);
+                                        _print("(%ebp), %eax\n");
+                                }
+                                _print("\tpushl %eax\n");
                         }
                 }
                 return tk;
@@ -520,7 +619,34 @@ assignment_typeA(struct _GLOBAL_ *GLOBAL, int tk)
         while (tk == 18)
         {
                 tk = relational(GLOBAL, tok(GLOBAL));
-                _print("\tpopl %ebx\n\tpopl %eax\n\tmovl %ebx, (%eax)\n");
+                _print("\tpopl %ebx\n\tpopl %eax\n");
+
+                if (GLOBAL->OPCODE_SUFFIX[0] == 'b')
+                {
+                        _print("\tmovb %bl, (%eax)\n");
+                }
+                else if (GLOBAL->OPCODE_SUFFIX[0] == 'w')
+                {
+                        _print("\tmovw %bx, (%eax)\n");
+                }
+                else
+                {
+                        _print("\tmovl %ebx, (%eax)\n");
+                }
+
+                if (GLOBAL->OPCODE_SUFFIX[0] == 'b')
+                {
+                        _print("\tmovzbl (%eax), %eax\n");
+                }
+                else if (GLOBAL->OPCODE_SUFFIX[0] == 'w')
+                {
+                        _print("\tmovzwl (%eax), %eax\n");
+                }
+                else
+                {
+                        _print("\tmovl (%eax), %eax\n");
+                }
+                _print("\tpushl %eax\n");
         }
         return tk;
 }
@@ -793,7 +919,8 @@ statement(struct _GLOBAL_ *GLOBAL, int tk)
         return tk;
 }
 
-_Noreturn int main(c, v) char **v;
+_Noreturn int main(c, v)
+char **v;
 {
         struct _GLOBAL_ GLOBAL;
         GLOBAL.label_count = GLOBAL.string_count = GLOBAL.global_count = GLOBAL.variable_count = 0;
