@@ -18,7 +18,7 @@ _exit:
         int     $0x80
 _read:
         pushal
-        movl    $0, %ebx
+        xorl    %ebx, %ebx
         movl    36(%esp), %ecx
         movl    40(%esp), %edx
         movl    $3, %eax
