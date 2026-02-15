@@ -30,7 +30,7 @@ extern expr(struct _GLOBAL_ *, int);
 _print_number(unsigned int n)
 {
         char buf[12];
-        int i;
+        char i;
 
         i = 11;
         buf[11] = 0;

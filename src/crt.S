@@ -1,9 +1,10 @@
         .section .text
         .global _exit
         .global _start
-        .global _perror
         .global _read
+        .global _fd_print
         .global _print
+        .global _perror
         .extern main
 _start:
         popl    %ecx
@@ -14,27 +15,23 @@ _start:
         movl    %eax, %ebx
         movl    $1, %eax
         int     $0x80
-
 _exit:
         pushl   %ebp
         movl    %esp, %ebp
         movl    8(%ebp), %ebx
         movl    $1, %eax
         int     $0x80
-
 _read:
         pushl   %ebp
         movl    %esp, %ebp
         pushl   %ebx
         pushl   %ecx
         pushl   %edx
-        
         movl    8(%ebp), %ebx
         movl    12(%ebp), %ecx
         movl    16(%ebp), %edx
         movl    $3, %eax
         int     $0x80
-        
         popl    %edx
         popl    %ecx
         popl    %ebx
@@ -42,50 +39,33 @@ _read:
         ret
 
 _perror:
-        pushl   %ebp
-        movl    %esp, %ebp
         pushl   %ebx
-        pushl   %ecx
-        pushl   %edx
-        
-        movl    8(%ebp), %ecx
-        movl    12(%ebp), %edx
         movl    $2, %ebx
-        movl    $4, %eax
-        int     $0x80
-        
-        popl    %edx
-        popl    %ecx
-        popl    %ebx
-        popl    %ebp
-        ret
-
+        jmp     _fd_print
 _print:
+        pushl   %ebx
+        movl    $1, %ebx
+_fd_print:
         pushl   %ebp
         movl    %esp, %ebp
-        pushl   %ebx
         pushl   %ecx
         pushl   %edx
         pushl   %esi
-        
-        movl    8(%ebp), %esi
+        #       We need to skip the pushed EBX, so its the second arg, not first
+        movl    12(%ebp), %esi
         xorl    %edx, %edx
-        
 strlen:
         cmpb    $0, (%esi, %edx)
         je      do_write
         incl    %edx
         jmp     strlen
-        
 do_write:
         movl    %esi, %ecx
-        movl    $1, %ebx
         movl    $4, %eax
         int     $0x80
-        
         popl    %esi
         popl    %edx
         popl    %ecx
-        popl    %ebx
         popl    %ebp
+        popl    %ebx
         ret
