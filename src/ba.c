@@ -23,7 +23,7 @@ struct _GLOBAL_
         int variable_count;
         int global_count;
         int count;
-        char PUSHBACK;
+        char PUSHBACK,REG_PREFIX[2],REG_SUFFIX[2],OPCODE_SUFFIX[2];
 };
 
 extern expr(struct _GLOBAL_ *, int);
@@ -151,6 +151,14 @@ static inline checkkeyword(struct _GLOBAL_ *GLOBAL, int tk)
         if (!cmp(GLOBAL->ID, "fn"))
         {
                 return 43;
+        }
+        if (!cmp(GLOBAL->ID, "short"))
+        {
+                return 44;
+        }
+        if (!cmp(GLOBAL->ID, "byte"))
+        {
+                return 45;
         }
         if (!cmp(GLOBAL->ID, "EOF"))
         {
@@ -519,6 +527,9 @@ assignment_typeA(struct _GLOBAL_ *GLOBAL, int tk)
 
 expr(struct _GLOBAL_ *GLOBAL, int tk)
 {
+        GLOBAL->REG_PREFIX[0] = 'e';
+        GLOBAL->REG_SUFFIX[0] = 'x';
+        GLOBAL->OPCODE_SUFFIX[0] = 'l';
         GLOBAL->count = 1;
         tk = assignment_typeA(GLOBAL, tk);
         while (tk == 23)
@@ -788,6 +799,10 @@ _Noreturn int main(c, v) char **v;
         GLOBAL.label_count = GLOBAL.string_count = GLOBAL.global_count = GLOBAL.variable_count = 0;
         GLOBAL.PUSHBACK = -1;
         GLOBAL.EBPOFF = -4;
+        GLOBAL.REG_PREFIX[0] = 'e';
+        GLOBAL.REG_SUFFIX[0] = 'x';
+        GLOBAL.OPCODE_SUFFIX[0] = 'l';
+        GLOBAL.REG_PREFIX[1] = GLOBAL.REG_SUFFIX[1] = GLOBAL.OPCODE_SUFFIX[1] = 0;
         char tk, i;
         tk = tok(&GLOBAL);
         _print("\t.global main\n\t.section .text\nmain:\tpushl %ebp\n\tmovl %esp, %ebp\n");

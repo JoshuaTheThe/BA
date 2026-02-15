@@ -15,7 +15,7 @@ DESCRIPTION
 
        keywords list:
        if       else    while   static  auto     goto    return  extern
-       asm      fn
+       asm      fn      byte    short
 
 EXAMPLE
         fn main(){
