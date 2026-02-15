@@ -1,0 +1,15 @@
+
+extern printf;
+
+fn stringcpy(a,b){
+        auto i=0;
+        while(byte *(int b + i)){
+                byte (int a+i) = byte *(int b+i);
+                i=i+1;
+        }
+}
+
+auto a="123",b="321";
+stringcpy(a,b);
+
+printf(a, "%s\n");
