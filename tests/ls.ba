@@ -1,0 +1,26 @@
+
+extern popen;
+extern fgets;
+extern printf;
+extern malloc;
+extern free;
+static pipe;
+static path;
+
+fn foo()
+{
+        path = malloc(128);
+        pipe = popen("r","ls");
+        if (pipe<1){
+                printf("Could not grab listing\n");
+                return 1;
+        }
+
+        while (fgets(pipe, 128, path))
+                printf(path, "%s\n");
+
+        pclose(pipe);
+        free(path);
+}
+
+return foo();

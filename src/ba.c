@@ -22,6 +22,7 @@ struct _GLOBAL_
         int label_count;
         int variable_count;
         int global_count;
+        int count;
         char PUSHBACK;
 };
 
@@ -382,11 +383,12 @@ primary(struct _GLOBAL_ *GLOBAL, int tk)
                         return assignment_typeB(GLOBAL, tok(GLOBAL), buf);
                 else if (tk == 5)
                 {
-                        _print("\tpushl %esi\n\tmovl %esp,%esi\n");
                         tk = expr(GLOBAL, tok(GLOBAL));
                         _print("\tcall ");
                         _print(buf);
-                        _print("\n\tmovl %esi,%esp\n\tpopl %esi\n\tpush %eax\n");
+                        _print("\n\taddl $");
+                        _print_number(GLOBAL->count * 4);
+                        _print(", %esp\n\tpush %eax\n");
                         if (tk != 6)
                                 _perror("syntax error\n", 14), _exit(1);
                         tk = tok(GLOBAL);
@@ -479,10 +481,12 @@ assignment_typeA(struct _GLOBAL_ *GLOBAL, int tk)
 
 expr(struct _GLOBAL_ *GLOBAL, int tk)
 {
+        GLOBAL->count = 1;
         tk = assignment_typeA(GLOBAL, tk);
         while (tk == 23)
         {
                 tk = assignment_typeA(GLOBAL, tok(GLOBAL));
+                ++GLOBAL->count;
         }
         return tk;
 }
