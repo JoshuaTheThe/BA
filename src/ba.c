@@ -20,19 +20,13 @@ struct _GLOBAL_
 
 extern expr(struct _GLOBAL_ *,int);
 
-_print_number(n)
+_print_number(unsigned int n)
 {
         char buf[12];
         int i;
 
         i = 11;
         buf[11] = 0;
-
-        if (n < 0)
-        {
-                _print("-");
-                n = -n;
-        }
 
         do
         {
