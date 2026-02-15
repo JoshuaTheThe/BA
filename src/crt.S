@@ -25,7 +25,6 @@ _read:
         int     $0x80
         popal
         ret
-
 _perror:
         pushl   %ebx
         movl    $2, %ebx
