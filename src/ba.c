@@ -75,7 +75,7 @@ getvar(struct _GLOBAL_ *GLOBAL, char *buf)
         for (i = 0; i < MAX_N - 1; ++i)
                 if (!cmp(buf, GLOBAL->variables[i]))
                         return i;
-        return -1;
+        _perror("not found\n", 11), _exit(1);
 }
 
 getc(struct _GLOBAL_ *GLOBAL)
@@ -331,8 +331,6 @@ assignment_typeB(struct _GLOBAL_ *GLOBAL, int tk, char *buf)
         char i;
         tk = expr(GLOBAL,tk);
         i = getvar(GLOBAL, buf);
-        if (i == -1)
-                _perror("not found\n", 11), _exit(1);
         if (i < GLOBAL->global_count)
         {
                 _print("\tlea ");
@@ -395,8 +393,6 @@ primary(struct _GLOBAL_ *GLOBAL, int tk)
                 else
                 {
                         i = getvar(GLOBAL, buf);
-                        if (i == -1)
-                                _perror("not found\n", 11), _exit(1);
                         if (i < GLOBAL->global_count)
                         {
                                 _print("\tpushl (");
