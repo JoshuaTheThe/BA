@@ -7,7 +7,7 @@
 extern int _print(const char *);
 extern int _perror(const char *, int);
 extern void _exit(int);
-extern int _read(int, char *, int);
+extern int _read(char *, int);
 
 struct _GLOBAL_
 {
@@ -89,7 +89,7 @@ getc(struct _GLOBAL_ *GLOBAL)
                 GLOBAL->PUSHBACK = -1;
                 return chr;
         }
-        _read(0, &chr, 1);
+        _read(&chr, 1);
         return chr;
 }
 

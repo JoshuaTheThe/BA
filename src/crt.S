@@ -17,16 +17,13 @@ _exit:
         movl    $1, %eax
         int     $0x80
 _read:
-        pushl   %ebp
-        movl    %esp, %ebp
         pushal
-        movl    8(%ebp), %ebx
-        movl    12(%ebp), %ecx
-        movl    16(%ebp), %edx
+        movl    $0, %ebx
+        movl    36(%esp), %ecx
+        movl    40(%esp), %edx
         movl    $3, %eax
         int     $0x80
         popal
-        popl    %ebp
         ret
 
 _perror:
