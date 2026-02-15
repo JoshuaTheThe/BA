@@ -7,20 +7,15 @@ extern free;
 static pipe;
 static path;
 
-fn foo()
-{
-        path = malloc(128);
-        pipe = popen("r","ls");
-        if (pipe<1){
-                printf("Could not grab listing\n");
-                return 1;
-        }
-
-        while (fgets(pipe, 128, path))
-                printf(path, "%s");
-
-        pclose(pipe);
-        free(path);
+path = malloc(128);
+pipe = popen("r","ls");
+if (pipe<1){
+        printf("Could not grab listing\n");
+        return 1;
 }
 
-return foo();
+while (fgets(pipe, 128, path))
+        printf(path, "%s");
+
+pclose(pipe);
+free(path);
