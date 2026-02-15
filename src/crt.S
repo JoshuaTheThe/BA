@@ -48,9 +48,7 @@ _print:
 _fd_print:
         pushl   %ebp
         movl    %esp, %ebp
-        pushl   %ecx
-        pushl   %edx
-        pushl   %esi
+        pushal
         #       We need to skip the pushed EBX, so its the second arg, not first
         movl    12(%ebp), %esi
         xorl    %edx, %edx
@@ -63,9 +61,7 @@ do_write:
         movl    %esi, %ecx
         movl    $4, %eax
         int     $0x80
-        popl    %esi
-        popl    %edx
-        popl    %ecx
+        popal
         popl    %ebp
         popl    %ebx
         ret
