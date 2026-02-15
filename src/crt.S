@@ -1,7 +1,7 @@
         .section .text
         .global _exit
         .global _pre_main
-        .global _read
+        .global _readstdin
         .global _fd_print
         .global _print
         .global _perror
@@ -16,7 +16,7 @@ _exit:
         movl    4(%esp), %ebx
         movl    $1, %eax
         int     $0x80
-_read:
+_readstdin:
         pushal
         xorl    %ebx, %ebx
         movl    36(%esp), %ecx
