@@ -34,7 +34,7 @@ extern expr(struct _GLOBAL_ *, int);
 
 int _print(const char *s)
 {
-        printf("%s",s);
+        printf("%s", s);
 }
 
 int _perror(const char *s)
@@ -42,7 +42,7 @@ int _perror(const char *s)
         perror(s);
 }
 
-int _readstdin(char *b,int c)
+int _readstdin(char *b, int c)
 {
         fread(b, 1, c, stdin);
 }
@@ -519,6 +519,9 @@ primary(struct _GLOBAL_ *GLOBAL, int tk)
                 {
                         tk = expr(GLOBAL, tok(GLOBAL));
                         _print("\tcall ");
+#ifdef _WIN32
+                        _print("_");
+#endif
                         _print(buf);
                         _print("\n\taddl $");
                         _print_number(GLOBAL->count * 4);
@@ -732,6 +735,9 @@ statement(struct _GLOBAL_ *GLOBAL, int tk)
                         if (tk == 32)
                         {
                                 _print("\t.extern ");
+#ifdef _WIN32
+                                _print("_");
+#endif
                                 _print(GLOBAL->ID);
                                 _print("\n");
                         }
@@ -933,6 +939,80 @@ statement(struct _GLOBAL_ *GLOBAL, int tk)
         return tk;
 }
 
+#ifdef _WIN32
+_Noreturn int main(int c, char **v)
+{
+        struct _GLOBAL_ GLOBAL;
+        GLOBAL.label_count = GLOBAL.string_count = GLOBAL.global_count = GLOBAL.variable_count = 0;
+        GLOBAL.PUSHBACK = -1;
+        GLOBAL.EBPOFF = -4;
+        GLOBAL.REG_PREFIX[0] = 'e';
+        GLOBAL.REG_SUFFIX[0] = 'x';
+        GLOBAL.OPCODE_SUFFIX[0] = 'l';
+        GLOBAL.REG_PREFIX[1] = GLOBAL.REG_SUFFIX[1] = GLOBAL.OPCODE_SUFFIX[1] = 0;
+        char tk, i;
+        tk = tok(&GLOBAL);
+        
+        _print("\t.file\t\"output.bc\"\n");
+        _print("\t.def\t___main;\t.scl\t2;\t.type\t32;\t.endef\n");
+        _print("\t.section .text\n");
+        
+        _print("\t.globl _main\n");
+        _print("\t.def\t_main;\t.scl\t2;\t.type\t32;\t.endef\n");
+        _print("_main:\n");
+        _print("\tpushl %ebp\n");
+        _print("\tmovl %esp, %ebp\n");
+        _print("\tandl $-16, %esp\n");
+        _print("\tsubl $16, %esp\n");
+        _print("\tcall ___main\n");
+        
+        createglobal(&GLOBAL, "argc");
+        createglobal(&GLOBAL, "argv");
+        
+        _print("\tmovl 8(%ebp), %eax\n");
+        _print("\tmovl %eax, argc\n");
+        _print("\tmovl 12(%ebp), %eax\n");
+        _print("\tmovl %eax, argv\n");
+        
+        while (tk)
+                tk = statement(&GLOBAL, tk);
+        
+        if (c == 2 && !cmp(v[1], "/Main"))
+                _print("\tcall _Main\n");
+        
+        _print(".ext:\n");
+        _print("\tmovl %ebp, %esp\n");
+        _print("\tpopl %ebp\n");
+        _print("\tret\n");
+        
+        _print("\t.section .data\n");
+        for (i = 0; i < GLOBAL.global_count; ++i)
+        {
+                _print("\t.globl ");
+                _print(GLOBAL.variables[i]);
+                _print("\n");
+                _print(GLOBAL.variables[i]);
+                _print(":\t.long 0\n");
+        }
+        
+        _print("\t.section .rdata\n");
+        for (i = 0; i < GLOBAL.string_count; ++i)
+        {
+                _print("string");
+                _print_number(i);
+                _print(":\n\t.ascii \"");
+                _print(&GLOBAL.strings[i * 32]);
+                _print("\\0\"\n");
+        }
+        
+        _print("\t.section .idata$3\n");
+        _print("\t.globl __imp__ExitProcess@4\n");
+        
+        _exit(0);
+}
+
+#else
+
 _Noreturn int main(c, v)
 char **v;
 {
@@ -971,3 +1051,5 @@ char **v;
         }
         _exit(0);
 }
+
+#endif
