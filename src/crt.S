@@ -13,9 +13,7 @@ _start:
         pushl   %ecx
         call    main
 _exit:
-        pushl   %ebp
-        movl    %esp, %ebp
-        movl    8(%ebp), %ebx
+        movl    4(%esp), %ebx
         movl    $1, %eax
         int     $0x80
 _read:
