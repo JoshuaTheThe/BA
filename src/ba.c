@@ -7,7 +7,7 @@
 extern int _print(const char *);
 extern int _perror(const char *);
 extern _Noreturn void _exit(int);
-extern int _read(char *, int);
+extern int _readstdin(char *, int);
 
 struct _GLOBAL_
 {
@@ -27,6 +27,27 @@ struct _GLOBAL_
 };
 
 extern expr(struct _GLOBAL_ *, int);
+
+#ifdef _WIN32
+
+#include <stdio.h>
+
+int _print(const char *s)
+{
+        printf("%s",s);
+}
+
+int _perror(const char *s)
+{
+        perror(s);
+}
+
+int _readstdin(char *b,int c)
+{
+        fread(b, 1, c, stdin);
+}
+
+#endif
 
 _print_number(unsigned int n)
 {
@@ -80,7 +101,7 @@ getvar(struct _GLOBAL_ *GLOBAL, char *buf)
         _perror("not found\n"), _exit(1);
 }
 
-getc(struct _GLOBAL_ *GLOBAL)
+_getc(struct _GLOBAL_ *GLOBAL)
 {
         char chr;
         chr = -1;
@@ -90,11 +111,11 @@ getc(struct _GLOBAL_ *GLOBAL)
                 GLOBAL->PUSHBACK = -1;
                 return chr;
         }
-        _read(&chr, 1);
+        _readstdin(&chr, 1);
         return chr;
 }
 
-static inline ungetc(struct _GLOBAL_ *GLOBAL, int c)
+static inline _ungetc(struct _GLOBAL_ *GLOBAL, int c)
 {
         GLOBAL->PUSHBACK = c;
 }
@@ -180,7 +201,7 @@ tok(struct _GLOBAL_ *GLOBAL)
         GLOBAL->NUMBER = i = tk = 0;
         do
         {
-                chr = getc(GLOBAL);
+                chr = _getc(GLOBAL);
         } while (chr == ' ' || chr == '\t' || chr == '\n' || chr == '\r');
 
         switch (chr)
@@ -279,7 +300,7 @@ tok(struct _GLOBAL_ *GLOBAL)
                 i = 0;
                 while (1)
                 {
-                        chr = getc(GLOBAL);
+                        chr = _getc(GLOBAL);
                         if (chr == '"')
                                 break;
                         if (chr == -1)
@@ -308,12 +329,12 @@ tok(struct _GLOBAL_ *GLOBAL)
                         GLOBAL->NUMBER += chr - '0';
                 }
                 i = i + 1;
-                chr = getc(GLOBAL);
+                chr = _getc(GLOBAL);
         }
 
         if (tk)
         {
-                ungetc(GLOBAL, chr);
+                _ungetc(GLOBAL, chr);
                 return tk;
         }
 
@@ -322,7 +343,7 @@ tok(struct _GLOBAL_ *GLOBAL)
                 tk = 32;
                 GLOBAL->ID[i] = chr;
                 i = i + 1;
-                chr = getc(GLOBAL);
+                chr = _getc(GLOBAL);
         }
 
         if (tk)
@@ -332,7 +353,7 @@ tok(struct _GLOBAL_ *GLOBAL)
                         tk = 64;
                         return tk;
                 }
-                ungetc(GLOBAL, chr);
+                _ungetc(GLOBAL, chr);
                 tk = checkkeyword(GLOBAL, tk);
                 return tk;
         }
