@@ -1,0 +1,2 @@
+#!/bin/bash
+rm a a.out; ba /Main < /dev/stdin | as -o a.out --32; ld -o a /dev/stdin -melf_i386  < a.out; ./a; echo $?
