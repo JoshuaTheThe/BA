@@ -1,2 +1,2 @@
 #!/bin/bash
-rm a a.out; ba /Main < /dev/stdin | as -o a.out --32; gcc -o a /dev/stdin -m32 -lgcc  < a.out; ./a; echo $?
+rm a a.out; ba < $1 | as -o a.out --32; gcc -o a /dev/stdin -m32 -lgcc  < a.out; ./a; echo $?
